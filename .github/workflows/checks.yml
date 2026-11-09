@@ -1,4 +1,4 @@
-name: Build and tests
+name: Build, tests and live health
 on:
   push:
   pull_request:
@@ -16,3 +16,22 @@ jobs:
       - run: npm run build
       - run: pip install -r requirements.txt pytest
       - run: ATLAS_DEV_SQLITE=1 python -m pytest -q tests/
+      - name: Verify live Render and Neon health (no customer data written)
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          url = 'https://atlas-endustri-agi-independent.onrender.com/api/health'
+          for attempt in range(8):
+              try:
+                  with urllib.request.urlopen(url, timeout=40) as response:
+                      data=json.load(response)
+                  print('LIVE_HEALTH:', data.get('status'), data.get('database'), data.get('provider'))
+                  if data.get('status') == 'ok' and data.get('database') == 'ready' and data.get('provider') == 'independent':
+                      print('LIVE_NEON_HEALTH_OK')
+                      break
+              except Exception as exc:
+                  print('Health check attempt', attempt + 1, 'failed:', type(exc).__name__)
+              if attempt == 7:
+                  raise SystemExit('Live Neon health not ready after retries')
+              time.sleep(12)
+          PY
