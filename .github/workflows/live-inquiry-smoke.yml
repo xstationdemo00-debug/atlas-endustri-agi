@@ -1,0 +1,42 @@
+name: One-time live inquiry smoke test
+on:
+  push:
+    paths:
+      - '.github/workflows/live-inquiry-smoke.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Post synthetic non-personal inquiry to live app
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request, urllib.error
+          base='https://atlas-endustri-agi-independent.onrender.com'
+          company='ATLAS SMOKE TEST - GERCEK FIRMA DEGIL'
+          payload={
+            'company_name':company,
+            'contact_name':'Atlas otomatik test',
+            'contact_email':f'atlas-smoke-{int(time.time())}@example.invalid',
+            'city':'TEST',
+            'service_type':'supplier_research',
+            'description':'Bu kayıt yalnızca Atlas Endüstri Ağı uçtan uca veritabanı testi içindir; gerçek başvuru değildir.',
+            'consent':True,
+            'website':''
+          }
+          body=json.dumps(payload).encode()
+          request=urllib.request.Request(base+'/api/inquiries', data=body, headers={'Content-Type':'application/json'}, method='POST')
+          try:
+              with urllib.request.urlopen(request,timeout=50) as response:
+                  status=response.status
+                  result=json.load(response)
+          except urllib.error.HTTPError as e:
+              print('LIVE_INQUIRY_HTTP_ERROR',e.code,e.read().decode()[:200])
+              raise
+          assert status == 201,(status,result)
+          assert result.get('received') is True and result.get('reference'),result
+          print('LIVE_INQUIRY_POST_OK',status)
+          print('LIVE_INQUIRY_REFERENCE',result['reference'])
+          PY
