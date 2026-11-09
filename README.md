@@ -30,3 +30,11 @@ Go to http://localhost:8765/ilk-hizmet for local inspection. SQLite storage is o
 - Original Base44 app: `6ae8583432c3a0d63a7b7938`.
 - Original Base44 source snapshot: 237 of 238 source files separately exported; `src/pages/CommercialServices.jsx` exceeded the connector transfer limit.
 - Stage-only SQL from the earlier preparation package can preserve unnormalized entity records as JSONB until a reviewed schema migration is ready.
+
+## Phase 2: private network interest & curated project board
+
+- `POST /api/network-interest`: **non-account** private interest submission for worker, team or company; stored with `pending` status; limited fields, required consent; no public contact directory.
+- `GET /api/projects`: only returns public-safe fields for entries with `approval_status='approved'`, `public_visible=true`, and `is_demo=false`.
+- `sql/002_network_interest_and_projects.sql`: additive Neon schema, indexes and least-privilege grants. Apply to the **Atlas Endüstri Ağı** Neon project only; never Atlas Earth.
+- The web DB role may INSERT private interest records and SELECT approved project summaries, **but cannot publish project records**.
+- Worker/company forms are **interest expressions, not verified user accounts, legally binding employment placements, or guaranteed jobs**. No fees are charged to workers. Complete data-controller privacy notice and legal compliance review remain prerequisites for broader commercial launch.

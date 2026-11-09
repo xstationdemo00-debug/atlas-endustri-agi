@@ -12,7 +12,7 @@
 <body>
  <header class="site-header"><div class="container header-content">
   <a class="logo" href="/" aria-label="Atlas Endüstri Ağı ana sayfa"><span class="logo-mark" aria-hidden="true">A</span><span>ATLAS <small>ENDÜSTRİ AĞI</small></span></a>
-  <nav aria-label="Ana menü"><a href="#hizmetler">Hizmetler</a><a href="#nasil">Nasıl çalışır?</a><a href="#vizyon">Hedefimiz</a></nav>
+  <nav aria-label="Ana menü"><a href="#hizmetler">Hizmetler</a><a href="#nasil">Nasıl çalışır?</a><a href="#ag">Ağa katıl</a><a href="#projeler">Projeler</a><a href="#vizyon">Hedefimiz</a></nav>
   <a class="header-cta" href="#on-talep">Ön talep ilet <span aria-hidden="true">↗</span></a>
  </div></header>
  <main>
@@ -37,7 +37,32 @@
  <section id="nasil" class="section dark"><div class="container process-grid"><div><span class="kicker">02 / ÇALIŞMA MODELİ</span><h2>Önce kapsam.<br/><span>Sonra güven.</span></h2><p>Doğrulama yapmadan üretim kapasitesi, fiyat, iş sonucu veya bağlantı garantisi vermiyoruz.</p><div class="price"><span>İlk pilot başlangıç bedeli</span><strong>2.900 TL</strong><small>Tek iş kalemi, tek bölge, en fazla üç aday ve 2–4 sayfa kaynaklı ön rapor için açıklanan başlangıç bedeli. Yazılı teklif, yasal koşullar ve faturalama doğrulanmadan ücretli işlem yapılmaz.</small></div></div>
   <ol class="steps"><li><span>01</span><div><h3>İhtiyaç alınır</h3><p>Teknik gereksinimler ve teslim beklentisi netleştirilir.</p></div></li><li><span>02</span><div><h3>Ön araştırma yapılır</h3><p>Adaylar kamuya açık kaynaklardan araştırılır; doğrulama eksikleri işaretlenir.</p></div></li><li><span>03</span><div><h3>Yazılı kapsam sunulur</h3><p>Uygun yasal/faturalama koşullarında müşteriyle mutabakat sağlanır.</p></div></li><li><span>04</span><div><h3>Rapor ve takip</h3><p>Mutabakata bağlı olarak araştırma ve kaynaklı raporlama yapılır.</p></div></li></ol>
  </div></section>
- <section id="on-talep" class="section form-section"><div class="container form-grid"><div><span class="kicker">03 / ÖN TALEP</span><h2>Teknik ihtiyacınızı <span>bizimle paylaşın.</span></h2><p>Üyelik gerektirmeyen ön talep. İlk mesajda teknik resim, kimlik, banka bilgisi veya ticari sır paylaşmayın.</p><div class="form-aside"><strong>Henüz pilot aşamadayız.</strong><p>Talep gönderimi ücretsizdir. Talebin alınması teklif, kapasite veya hizmet garantisi oluşturmaz.</p></div></div>
+
+ <section id="ag" class="section network-section"><div class="container">
+  <div class="section-top"><span class="kicker">03 / SANAYİ AĞI</span><h2>Usta, ekip ve firmalar için <span>ayrı bir başlangıç.</span></h2><p>Ağa ilgi bildirimi, ücret veya iş garantisi gerektirmez. Bu form henüz kullanıcı hesabı açmaz; yalnızca başvurunuzu özel inceleme kuyruğuna kaydeder. İletişim bilgileriniz kamuya yayımlanmaz.</p></div>
+  <div class="network-grid">
+   <div class="network-options"><article><span class="service-num">01</span><h3>Kaynakçı ve diğer ustalar</h3><p>TIG, MIG/MAG, MMA, borulama, montaj, talaşlı imalat ve diğer uzmanlıklar. Ustalardan başvuru/eşleştirme ücreti alınmaz.</p></article>
+    <article><span class="service-num">02</span><h3>Usta ekibi ve taşeron adayları</h3><p>Kaynak, imalat, borucu ve montaj ekipleri; kapasite, bölge ve çalışma modelini ön bilgi olarak paylaşabilir.</p></article>
+    <article><span class="service-num">03</span><h3>Sanayi firmaları</h3><p>Firma, satın alma ve iş birliği ihtiyaçlarını bildirebilir. Ticari doğrulama yapılmadan kapasite ya da teklif garantisi verilmez.</p></article></div>
+   <form id="network-form" class="inquiry-form network-form" novalidate>
+    <h3>Ağa katılım için ön bilgi</h3><p class="form-help">Hesap oluşturma değil, iletişim ve uygunluk ön değerlendirmesidir.</p>
+    <label>Başvuru türü <span>*</span><select name="kind" required><option value="">Seçiniz</option><option value="worker">Bireysel usta / çalışan</option><option value="team">Usta ekibi / taşeron adayı</option><option value="company">Sanayi firması</option></select></label>
+    <div class="field-row"><label>Adınız veya ekip/firma adı <span>*</span><input name="name" required minlength="2" maxlength="180" autocomplete="organization" placeholder="Ad / ekip / firma" /></label><label>İrtibat adı <span>*</span><input name="contact_name" required minlength="2" maxlength="140" autocomplete="name" placeholder="Ad soyad" /></label></div>
+    <div class="field-row"><label>E-posta <span>*</span><input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="ornek@posta.com" /></label><label>Şehir <span>*</span><input name="city" required minlength="2" maxlength="120" placeholder="Örn. Ankara" /></label></div>
+    <label>Meslek / faaliyet alanı <span>*</span><input name="specialty" required minlength="2" maxlength="140" placeholder="Örn. TIG kaynak ve paslanmaz borulama" /></label>
+    <label>Çalışma bilgisi / iş birliği ihtiyacı <span>*</span><textarea name="details" required minlength="20" maxlength="1500" rows="4" placeholder="Deneyim, ekip kapasitesi, hizmet bölgesi veya aradığınız iş birliği hakkında genel bilgi verin. Kimlik numarası, IBAN veya belge göndermeyin."></textarea></label>
+    <div class="hide-trap" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off" /></label></div>
+    <label class="consent"><input type="checkbox" name="consent" required /><span>Bu ön kayıt için verdiğim iletişim bilgilerinin yalnızca başvuru değerlendirmesi ve geri dönüş amacıyla işlenmesini kabul ediyorum. <a href="#gizlilik">Gizlilik bilgilendirmesi</a>.</span></label>
+    <button class="btn btn-primary submit" type="submit">Ön kaydı gönder <span>↗</span></button><p id="network-status" class="form-status" role="status" aria-live="polite"></p>
+   </form></div>
+ </div></section>
+ <section id="projeler" class="section projects-section"><div class="container">
+  <span class="kicker">04 / PROJE PANOSU</span><h2>İncelenmiş <span>sanayi fırsatları.</span></h2>
+  <p class="projects-description">Bu panoya yalnızca yayın izni doğrulanmış, insan incelemesinden geçmiş proje özetleri alınır. Henüz doğrulanmamış ilanlar ve kişisel iletişim bilgileri gösterilmez.</p>
+  <div id="project-results" class="project-results" aria-live="polite"><p class="project-empty">Onaylı proje kayıtları yükleniyor…</p></div>
+ </div></section>
+
+ <section id="on-talep" class="section form-section"><div class="container form-grid"><div><span class="kicker">05 / HİZMET ÖN TALEBİ</span><h2>Teknik ihtiyacınızı <span>bizimle paylaşın.</span></h2><p>Üyelik gerektirmeyen ön talep. İlk mesajda teknik resim, kimlik, banka bilgisi veya ticari sır paylaşmayın.</p><div class="form-aside"><strong>Henüz pilot aşamadayız.</strong><p>Talep gönderimi ücretsizdir. Talebin alınması teklif, kapasite veya hizmet garantisi oluşturmaz.</p></div></div>
   <form id="inquiry-form" class="inquiry-form" action="/api/inquiries" method="post" novalidate>
    <div class="field-row"><label>Firma adı <span>*</span><input name="company_name" required maxlength="180" placeholder="Firmanızın adı" /></label><label>İlgili kişi <span>*</span><input name="contact_name" required maxlength="140" placeholder="Ad soyad" /></label></div>
    <div class="field-row"><label>Kurumsal e-posta <span>*</span><input type="email" name="contact_email" required maxlength="254" placeholder="ornek@firma.com" /></label><label>Şehir<input name="city" maxlength="120" placeholder="İl / ilçe" /></label></div>
@@ -49,9 +74,9 @@
    <p role="status" id="form-status" class="form-status" aria-live="polite"></p>
   </form>
  </div></section>
- <section id="vizyon" class="section vision"><div class="container vision-inner"><span class="kicker">04 / UZUN VADELİ VİZYON</span><h2>Sanayinin büyümesi <em>insan emeğiyle başlar.</em></h2><p>Hedefimiz, nitelikli çalışanların yetkinliğini görünür kılmak; sanayi firmalarının teknik gereksinimleriyle küçük ve büyük üretim kuruluşlarını adil koşullarda buluşturmak. Platform, şirketleşme ve yasal hazırlıklar çerçevesinde aşamalı olarak gelişecektir.</p></div></section>
- <section id="gizlilik" class="privacy"><div class="container"><h2>Gizlilik ve veri bilgilendirmesi</h2><p>Bu pilot formda ad, firma adı, e-posta, şehir ve talep açıklaması alınır. Bilgiler yalnızca talebin değerlendirilmesi ve yanıtlanması amacıyla işlenmelidir. Kişisel verileri silme veya erişim talepleri için sayfanın işletmeci iletişim kanalı kullanılmalıdır. Yayına geçmeden önce nihai KVKK aydınlatma metni, veri sorumlusu ve saklama süresi hukuken doğrulanmalıdır. İlk aşamada hassas belge göndermeyin.</p></div></section>
+ <section id="vizyon" class="section vision"><div class="container vision-inner"><span class="kicker">06 / UZUN VADELİ VİZYON</span><h2>Sanayinin büyümesi <em>insan emeğiyle başlar.</em></h2><p>Hedefimiz, nitelikli çalışanların yetkinliğini görünür kılmak; sanayi firmalarının teknik gereksinimleriyle küçük ve büyük üretim kuruluşlarını adil koşullarda buluşturmak. Platform, şirketleşme ve yasal hazırlıklar çerçevesinde aşamalı olarak gelişecektir.</p></div></section>
+ <section id="gizlilik" class="privacy"><div class="container"><h2>Gizlilik ve veri bilgilendirmesi</h2><p>Bu pilot formlarda başvuru türü, ad, irtibat adı, e-posta, şehir, meslek/faaliyet alanı ve açıklama alınabilir. Bilgiler yalnızca başvurunun değerlendirilmesi ve yanıtlanması amacıyla saklanır. Kayıtlar varsayılan olarak özel ve inceleme bekler; halka açık listelerde yayımlanmaz. Kişisel verileri silme veya erişim talepleri için sayfanın işletmeci iletişim kanalı kullanılmalıdır. Yayına geçmeden önce nihai KVKK aydınlatma metni, veri sorumlusu ve saklama süresi hukuken doğrulanmalıdır. İlk aşamada hassas belge göndermeyin.</p></div></section>
  </main>
- <footer><div class="container"><div class="footer-brand">ATLAS <span>ENDÜSTRİ AĞI</span></div><p>Nitelikli emek · Güçlü üretim · Adil iş birliği</p><small>Bağımsız geçiş pilotu — henüz canlı yayına alınmadı. Ticari faaliyet koşulları doğrulanmadan ödeme alınmaz.</small></div></footer>
+ <footer><div class="container"><div class="footer-brand">ATLAS <span>ENDÜSTRİ AĞI</span></div><p>Nitelikli emek · Güçlü üretim · Adil iş birliği</p><small>Bağımsız erken aşama pilot — ön kayıt, üyelik veya istihdam garantisi değildir. Yasal/faturalama koşulları doğrulanmadan ödeme alınmaz.</small></div></footer>
 </body>
 </html>

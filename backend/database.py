@@ -49,6 +49,7 @@ def get_engine():
         return None
     _engine = create_engine(url, pool_pre_ping=True, pool_recycle=300)
     if url.startswith("sqlite:"):
+        from . import network  # registers network models before dev SQLite create_all
         Base.metadata.create_all(_engine)
     return _engine
 
@@ -71,8 +72,12 @@ def healthcheck_db():
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
         if engine.dialect.name == "postgresql":
-            # A read-only connection must not activate the submission form.
+            # Only mark the pilot ready when both intake tables and the public
+            # approved-project view are reachable with the current app role.
             readonly = conn.execute(text("SHOW transaction_read_only")).scalar_one()
             if str(readonly).lower() in {"on", "true", "1"}:
                 return False
+            conn.execute(text("SELECT id FROM public.service_inquiries LIMIT 0"))
+            conn.execute(text("SELECT id FROM public.atlas_network_applications LIMIT 0"))
+            conn.execute(text("SELECT id FROM public.atlas_project_listings LIMIT 0"))
     return True
