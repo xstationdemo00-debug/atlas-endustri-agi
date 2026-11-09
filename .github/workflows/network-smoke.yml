@@ -1,0 +1,42 @@
+name: Verify new network forms against live Neon
+on:
+  push:
+    paths:
+      - .github/workflows/network-smoke.yml
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate project privacy and submit one synthetic team interest
+        run: |
+          python - <<'PY'
+          import json,time,urllib.request,urllib.error
+          host='https://atlas-endustri-agi-independent.onrender.com'
+          for i in range(20):
+              try:
+                  with urllib.request.urlopen(host+'/api/projects',timeout=35) as r:
+                      assert r.status==200
+                      data=json.load(r)
+                      assert isinstance(data['projects'],list)
+                  break
+              except (urllib.error.HTTPError,urllib.error.URLError,AssertionError,KeyError) as e:
+                  if i==19:raise
+                  print('Awaiting v2 deployment, attempt',i+1)
+                  time.sleep(15)
+          payload={'kind':'team','name':'ATLAS SENTETIK EKIP TESTI - GERCEK DEGIL',
+                   'contact_name':'Otomatik atlas testi','email':f'network-test-{int(time.time())}@example.invalid',
+                   'city':'TEST','specialty':'Test kaynak ve boru ekibi',
+                   'details':'Bu kayit yalnizca canli basvuru ve veri tabani dogrulama testi icindir, gercek kisi veya ekip degildir.',
+                   'consent':True,'website':''}
+          req=urllib.request.Request(host+'/api/network-interest',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json'},method='POST')
+          with urllib.request.urlopen(req,timeout=40) as response:
+              result=json.load(response)
+              assert response.status==201
+              assert result['received'] and result['reference'] and result['status']=='pending'
+              print('ATLAS_NETWORK_LIVE_POST_OK',response.status)
+              print('ATLAS_NETWORK_REFERENCE',result['reference'])
+          print('ATLAS_PUBLIC_PROJECT_LIST_OK')
+          PY
