@@ -1,0 +1,27 @@
+name: Verify independently approved public project board
+on:
+  push:
+    paths:
+      - .github/workflows/project-board-smoke.yml
+jobs:
+  live-public:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Ensure only approved public projects returned
+        run: |
+          python - <<'PY'
+          import urllib.request,json
+          url='https://atlas-endustri-agi-independent.onrender.com/api/projects'
+          with urllib.request.urlopen(url,timeout=40) as response:
+            assert response.status==200
+            data=json.load(response)
+          projects=data.get('projects',[])
+          assert len(projects)==2,('Expected two verified GASKI announcements',len(projects))
+          assert all('GASKİ' in item['title'] for item in projects)
+          assert all(item['public_source_url'].startswith('https://gaski.gov.tr/') for item in projects)
+          assert all('email' not in item and 'contact_name' not in item for item in projects)
+          print('ATLAS_PROJECT_BOARD_LIVE_OK',len(projects))
+          PY
