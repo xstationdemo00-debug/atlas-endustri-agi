@@ -1,0 +1,32 @@
+name: Verify original interface preview on Render
+on:
+  push:
+    branches: [base44-original-preview]
+    paths: ['.github/workflows/check-original-live.yml']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check original Base44 UI and SPA routes (no private data)
+        run: |
+          python - <<'PY'
+          import urllib.request,time
+          base='https://atlas-endustri-orijinal-arayuz.onrender.com'
+          for attempt in range(15):
+              try:
+                  with urllib.request.urlopen(base+'/',timeout=40) as r:
+                      html=r.read().decode('utf-8','replace')
+                      assert r.status == 200
+                      assert 'Atlas Endüstri Ağı' in html
+                      assert 'ÖNİZLEMESİ' in html
+                  with urllib.request.urlopen(base+'/projeler',timeout=40) as r:
+                      assert r.status==200
+                      assert b'id="root"' in r.read()
+                  print('ATLAS_ORIGINAL_UI_HTTP_OK')
+                  print('ATLAS_ORIGINAL_MENU_SPA_ROUTE_OK')
+                  break
+              except Exception as exc:
+                  print('Attempt', attempt+1, 'failed:',repr(exc))
+                  if attempt==14:raise
+                  time.sleep(15)
+          PY
