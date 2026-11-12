@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { neonAuth } from '@/lib/neonAuthClient';
 import { useAuth } from '@/lib/AuthContext';
-import HumanVerification from '@/components/security/HumanVerification';
 import { Building2, CheckCircle2, LockKeyhole, ShieldCheck } from 'lucide-react';
 
 const SERVICES=[
@@ -22,19 +21,37 @@ export default function SecureServiceInquiry(){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [success,setSuccess]=useState('');
- const [token,setToken]=useState('');
- const [attempt,setAttempt]=useState(0);
  const set=(key,value)=>setForm(p=>({...p,[key]:value}));
  const submit=async(e)=>{
   e.preventDefault();if(busy||!user?.email)return;
   setBusy(true);setError('');setSuccess('');
   try{
-   const response=await base44.functions.invoke('submitServiceInquiry',{
-     ...form,contact_email:user.email,turnstile_token:token
+   if(!form.consent)throw new Error('Gizlilik bilgilendirmesini kabul edin.');
+   if(form.website_extra.trim())throw new Error('Form doğrulanamadı.');
+   const api=import.meta.env.VITE_NEON_DATA_API_URL;
+   if(!api||!neonAuth)throw new Error('Neon başvuru servisi yapılandırılmamış.');
+   const session=await neonAuth.getSession();
+   const member=session?.data?.user;
+   if(!member?.id)throw new Error('Oturumunuzu tekrar doğrulayın.');
+   if(typeof neonAuth.getJWTToken!=='function')throw new Error('Güvenli oturum belirteci alınamadı.');
+   const jwtResponse=await neonAuth.getJWTToken();
+   const jwt=typeof jwtResponse==='string'?jwtResponse:jwtResponse?.data?.token||jwtResponse?.token;
+   if(!jwt)throw new Error('Oturum doğrulama belirteci bulunamadı.');
+   const response=await fetch(api+'/member_inquiries?select=id,status',{
+     method:'POST', credentials:'omit', cache:'no-store',
+     headers:{'Content-Type':'application/json','Content-Profile':'atlas_app','Accept-Profile':'atlas_app',
+       'Authorization':'Bearer '+jwt,'Prefer':'return=representation'},
+     body:JSON.stringify({
+       owner_auth_user_id:member.id,company_name:form.company_name.trim(),contact_name:form.contact_name.trim(),
+       city:form.city.trim(),phone:form.phone.trim(),service_type:form.service_type,
+       description:form.description.trim(),consent_confirmed:true
+     })
    });
-   if(response?.data?.ok!==true)throw new Error(response?.data?.error||'Talep gönderilemedi.');
-   setSuccess('Talep alındı. İnceleme için yönetim merkezine iletildi.');
-   setForm(EMPTY);setToken('');setAttempt(n=>n+1);
+   const rows=await response.json().catch(()=>null);
+   const item=Array.isArray(rows)?rows[0]:rows;
+   if(!response.ok||!item?.id||item?.status!=='new')throw new Error('Neon bu talebi kabul etmedi ('+response.status+').');
+   setSuccess('Talebiniz Neon veritabanına kaydedildi. Takip numarası: '+item.id);
+   setForm(EMPTY);
   }catch(err){
    setError(err?.response?.data?.error||err?.message||'Talep gönderilemedi.');
   }finally{setBusy(false);}
@@ -51,7 +68,7 @@ export default function SecureServiceInquiry(){
   </header>
   <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-xs leading-6 text-sky-950">
    <LockKeyhole size={16} className="mr-2 inline"/> Başvuru e-postası: <strong>{user?.email||'Giriş yapılıyor…'}</strong>
-   <p>Hesap doğrulaması, sunucu hız sınırı ve etkinse CAPTCHA ile korunur. T.C. kimlik, banka kartı, sağlık veya şifre bilgisi göndermeyin.</p>
+   <p>E-posta doğrulaması ve veritabanı sahiplik kuralları uygulanır. Ek bot koruması henüz tamamlanmadı. Kimlik, banka veya şifre bilgisi göndermeyin.</p>
   </div>
   {success&&<div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950"><CheckCircle2 size={17}/>{success}</div>}
   {error&&<p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{error}</p>}
@@ -93,9 +110,8 @@ export default function SecureServiceInquiry(){
    <label className="absolute left-[-9999px]" aria-hidden="true">Web sitesi
     <input value={form.website_extra} autoComplete="off" tabIndex={-1} onChange={e=>set('website_extra',e.target.value)}/>
    </label>
-   <div className="sm:col-span-2"><HumanVerification key={attempt} action="service_inquiry" onToken={setToken}/></div>
    <button disabled={busy||!user?.email} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-bold text-white disabled:opacity-50 sm:col-span-2">
-    {busy?'Kimlik ve talep doğrulanıyor…':'Güvenli talebi gönder'}
+    {busy?'Talebiniz kontrol ediliyor…':'Neon’a güvenli ön talep gönder'}
    </button>
    <p className="text-xs text-muted-foreground sm:col-span-2"><Building2 size={13} className="mr-1 inline"/> Gönderim bir satın alma, ekip yönlendirme veya fiyat garantisi oluşturmaz.</p>
   </form>
