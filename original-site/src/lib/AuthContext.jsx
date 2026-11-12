@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { neonAuth } from '@/lib/neonAuthClient';
+import { base44 } from '@/api/base44Client';
 
 const Context = createContext(null);
 
@@ -30,11 +31,20 @@ export function AuthProvider({ children }) {
       }
       // Authorization: no admin grant based only on client-side user fields.
       // The independent API will determine any elevated role server-side.
+      // Server-side Neon Auth role, checked against the verified JWT.
+      // Never promote to admin from local storage, user profile or URL.
+      let verifiedRole='member';
+      try {
+        const result=await base44.functions.invoke('currentMemberRole',{});
+        verifiedRole=result?.role==='admin'?'admin':'member';
+      } catch {
+        verifiedRole='member'; // permission failures must not elevate privileges
+      }
       const member = {
         id: candidate.id,
         email: candidate.email || '',
         full_name: candidate.name || candidate.email || 'Atlas üyesi',
-        role: 'member',
+        role: verifiedRole,
       };
       setUser(member);
       setError(null);

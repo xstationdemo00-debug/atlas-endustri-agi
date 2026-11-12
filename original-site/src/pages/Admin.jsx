@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { notify } from '@/lib/tenant';
+import NeonModerationPanel from '@/components/admin/NeonModerationPanel';
 
 export default function Admin() {
   const { user } = useAuth() || {};
@@ -79,15 +80,16 @@ export default function Admin() {
     );
   }
 
-  const pending = companies.filter((company) => company.verification_status === 'pending');
+  const pending = []; // Do not confuse owner's company list with the real Neon approval queue.
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5">
       <PageHeader
         title="Kurumsal yönetim"
-        description="Firma doğrulama kuyruğu, ülke/bölge yapılandırması ve entegrasyon altyapısı."
+        description="Doğrulanmış hesaplarla yönetim ve kontrollü onay süreçleri. Eski Base44 yönetim işlevlerinin tamamı henüz taşınmadı."
       />
 
+      <NeonModerationPanel />
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
         <div>
           <h3 className="font-heading text-sm font-bold text-foreground">Firma doğrulama</h3>
@@ -119,7 +121,7 @@ export default function Admin() {
             ))}
             {regions.length === 0 && <p className="text-xs text-muted-foreground">Henüz bölge tanımlanmadı.</p>}
           </div>
-          <form onSubmit={addRegion} className="mt-3 space-y-2 border-t border-border pt-3">
+          <form onSubmit={(event)=>event.preventDefault()} className="mt-3 space-y-2 border-t border-border pt-3">
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <Label className="text-xs">Ülke</Label>
@@ -148,7 +150,7 @@ export default function Admin() {
                 </Select>
               </div>
             </div>
-            <Button type="submit" size="sm" variant="outline"><Plus size={14} className="mr-1" /> Bölge ekle</Button>
+            <Button type="submit" size="sm" variant="outline" disabled title="Bölge yönetimi taşınıyor"><Plus size={14} className="mr-1" /> Bölge ekle</Button>
           </form>
         </div>
 
@@ -164,7 +166,7 @@ export default function Admin() {
                   <StatusBadge status={integration.status} />
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{integration.description}</p>
-                <Button size="sm" variant="outline" className="mt-2" onClick={() => toggleIntegration(integration)}>
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => toggleIntegration(integration)} disabled title="Entegrasyon yönetimi taşınıyor">
                   {integration.status === 'active' ? 'Duraklat' : 'Etkinleştir'}
                 </Button>
               </div>

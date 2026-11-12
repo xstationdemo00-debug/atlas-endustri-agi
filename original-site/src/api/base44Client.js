@@ -31,7 +31,8 @@ async function credentials() {
 
 async function requestResource(method, resource, query='', body) {
   if (!['entity_records','published_work_requests','incoming_offers',
-       'rpc/submit_work_request_offer','rpc/decide_work_request_offer'].includes(resource)) {
+       'rpc/submit_work_request_offer','rpc/decide_work_request_offer',
+       'rpc/current_member_role','rpc/admin_review_queue','rpc/admin_moderate_record'].includes(resource)) {
     throw new Error('Desteklenmeyen Atlas veri yolu.');
   }
   const {token} = await credentials();
@@ -180,6 +181,20 @@ const entities=new Proxy({}, {get:(_,type)=>type==='then'?undefined:entity(Strin
 export const base44={
   entities,
   functions:{invoke:async(name,args={})=>{
+    if(name==='currentMemberRole')
+      return requestResource('POST','rpc/current_member_role','',{});
+    if(name==='adminReviewQueue')
+      return requestResource('POST','rpc/admin_review_queue','',{});
+    if(name==='adminModerateRecord') {
+      if(!args?.record_id||!['approve','reject'].includes(args?.decision))
+        throw new Error('Onay işlemi için geçerli kayıt ve karar gerekli.');
+      return requestResource('POST','rpc/admin_moderate_record','',{
+        p_record_id:args.record_id,
+        p_decision:args.decision,
+        p_checks:args.checks||{},
+        p_note:String(args.note||'')
+      });
+    }
     if(name==='decideOffer') {
       if(!args?.offer_id||!['accept','reject','shortlist'].includes(args?.decision)) throw new Error('Geçersiz karar.');
       return requestResource('POST','rpc/decide_work_request_offer','',
