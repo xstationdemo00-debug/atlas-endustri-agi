@@ -1,0 +1,30 @@
+name: Browser QA — original Atlas UI
+on:
+  push:
+    branches: [base44-original-preview]
+    paths: ['.github/workflows/original-ui-browser.yml', 'original-site/tests/browserSmoke.mjs']
+  workflow_dispatch:
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chromium browser
+        working-directory: original-site
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test login UI, tenders UI and visible live tender data
+        working-directory: original-site
+        run: node tests/browserSmoke.mjs
+      - name: Keep public-page QA screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-browser-smoke
+          path: /tmp/atlas-original-browser-qa.png
+          if-no-files-found: ignore
