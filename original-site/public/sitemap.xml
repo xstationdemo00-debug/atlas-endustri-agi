@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+ <url><loc>https://atlas-endustri-agi.base44.app/ilk-hizmet</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/hizmetler</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/ihaleler</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/nasil-calisir</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/cozumler</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/destek</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/calisan-haklari</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+ <url><loc>https://atlas-endustri-agi.base44.app/gizlilik</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+</urlset>

@@ -1,0 +1,19 @@
+name: Original Base44 interface preview build
+on:
+  push:
+    branches: [base44-original-preview]
+  workflow_dispatch:
+jobs:
+  build-original:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install original interface dependencies
+        working-directory: original-site
+        run: npm install --no-audit --no-fund
+      - name: Build original React interface
+        working-directory: original-site
+        run: npm run build
