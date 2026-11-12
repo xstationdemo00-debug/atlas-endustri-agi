@@ -1,0 +1,38 @@
+name: Verify live vetted tender feed
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/tender-http-smoke.yml']
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public tender feed, CORS and sanitization
+        run: |
+          python - <<'PY'
+          import json,urllib.request,time
+          u='https://atlas-endustri-agi-independent.onrender.com/api/tenders'
+          req=urllib.request.Request(u,headers={
+            'Origin':'https://atlas-endustri-orijinal-arayuz.onrender.com',
+            'Accept':'application/json'
+          })
+          for attempt in range(8):
+              try:
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      d=json.load(r)
+                      assert r.status==200
+                      assert r.headers.get('Access-Control-Allow-Origin')=='https://atlas-endustri-orijinal-arayuz.onrender.com'
+                      assert d['ok'] is True and isinstance(d['tenders'],list) and len(d['tenders'])>=1
+                      for item in d['tenders']:
+                          assert item['source_url'].startswith('https://')
+                          assert 'contact_email' not in item and 'contact_name' not in item
+                          assert 'payload' not in item and 'owner_auth_user_id' not in item
+                  print('ATLAS_PUBLIC_TENDERS_HTTP_OK',len(d['tenders']))
+                  print('ATLAS_PUBLIC_TENDERS_CORS_OK')
+                  print('ATLAS_PUBLIC_TENDERS_SANITIZATION_OK')
+                  break
+              except Exception as err:
+                  print('Attempt',attempt+1,type(err).__name__,str(err)[:180])
+                  if attempt==7:raise
+                  time.sleep(12)
+          PY
