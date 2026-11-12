@@ -21,13 +21,17 @@ jobs:
           except urllib.error.HTTPError as e:
               print('ANONYMOUS_READ_DENIED',e.code)
               assert e.code in (401,403,404), e.code
-          req_public=urllib.request.Request(api+'/published_tenders?select=id,title,deadline,source_url&limit=20',headers={'Accept-Profile':'atlas_app'})
-          with urllib.request.urlopen(req_public,timeout=40) as response:
-              tenders=json.load(response)
-              assert response.status==200 and isinstance(tenders,list)
-              assert len(tenders)>=1
+          public_url='https://atlas-endustri-agi-independent.onrender.com/api/tenders'
+          req_public=urllib.request.Request(public_url,headers={'Origin':'https://atlas-endustri-orijinal-arayuz.onrender.com','Accept':'application/json'})
+          with urllib.request.urlopen(req_public,timeout=45) as response:
+              result=json.load(response)
+              assert response.status==200 and result['ok'] is True
+              assert response.headers.get('Access-Control-Allow-Origin') == 'https://atlas-endustri-orijinal-arayuz.onrender.com'
+              tenders=result['tenders']
+              assert isinstance(tenders,list) and len(tenders)>=1
               for row in tenders:
                   assert row['source_url'].startswith('https://')
+                  assert 'payload' not in row and 'contact_email' not in row
               print('ATLAS_APPROVED_PUBLIC_TENDERS_OK',len(tenders))
           jwks='https://ep-raspy-sound-baqnilnh.neonauth.c-8.eu-central-1.aws.neon.tech/neondb/auth/.well-known/jwks.json'
           with urllib.request.urlopen(jwks,timeout=40) as response:
