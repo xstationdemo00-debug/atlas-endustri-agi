@@ -90,7 +90,7 @@ export default function FirstSalesOutreach({prospects=[],onChange}){
       Hiçbir e-posta kendiliğinden gönderilmez.
      </p>
     </div>
-    <a href="/ilk-hizmet" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-amber-700 underline">Paylaşılabilir hizmet sayfası</a>
+    <a href="/#/ilk-hizmet" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-amber-700 underline">Paylaşılabilir hizmet sayfası</a>
    </div>
    {error&&<p role="alert" className="mt-3 rounded-lg bg-rose-50 p-3 text-xs text-rose-900">{error}</p>}
    {message&&<p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-950">{message}</p>}
