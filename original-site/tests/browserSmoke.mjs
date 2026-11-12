@@ -30,8 +30,7 @@ try {
   await checkRoute('/login', 'login', 'Atlas Endüstri Ağı');
   await checkRoute('/ihaleler', 'tenders', 'İhale ve proje fırsatları');
   await page.waitForFunction(
-    () => document.querySelector('#root')?.innerText?.().includes('GASKİ') ||
-          document.querySelector('#root')?.innerText?.().includes('Fırsat listesine şu anda erişilemiyor.'),
+    () => { const text=document.querySelector('#root')?.innerText || ''; return text.includes('GASKİ') || text.includes('Fırsat listesine şu anda erişilemiyor.'); },
     { timeout: 35000 }
   );
   const tenderText = await page.locator('#root').innerText();
