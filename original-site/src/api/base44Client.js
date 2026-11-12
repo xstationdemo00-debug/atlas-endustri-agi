@@ -5,11 +5,12 @@
  * - Neon Data API enforces PostgreSQL row-level security.
  * - Own, newly-created records can be read/created/updated for a safe subset.
  * - Legacy Base44 records have no owner yet and remain inaccessible.
- * - Organization sharing, admin operations, and 13 cloud functions are disabled
+ * - Organization sharing, admin operations, and remaining cloud functions are disabled
  *   rather than pretending that a remote action succeeded.
  */
 import { neonAuth } from '@/lib/neonAuthClient';
 import { asLegacyCollection } from '@/lib/legacyCollection';
+import { mergeById, normalizePublicWorkRequest, normalizeIncomingOffer, offerRpcArgs } from '@/lib/neonWorkflows';
 
 const DATA_API = import.meta.env.VITE_NEON_DATA_API_URL || '';
 const WRITABLE_ENTITY_TYPES = new Set(['Project', 'WorkRequest', 'Offer', 'WorkerProfile', 'Team', 'Company']);
@@ -28,7 +29,11 @@ async function credentials() {
   return { token, userId: user.id };
 }
 
-async function request(method, query, body) {
+async function requestResource(method, resource, query='', body) {
+  if (!['entity_records','published_work_requests','incoming_offers',
+       'rpc/submit_work_request_offer','rpc/decide_work_request_offer'].includes(resource)) {
+    throw new Error('Desteklenmeyen Atlas veri yolu.');
+  }
   const {token} = await credentials();
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -40,16 +45,21 @@ async function request(method, query, body) {
     headers['Content-Type'] = 'application/json';
     headers.Prefer = 'return=representation';
   }
-  const response = await fetch(`${DATA_API}/entity_records${query || ''}`, {
+  const response = await fetch(`${DATA_API}/${resource}${query || ''}`, {
     method,headers,credentials:'omit',cache:'no-store',
     body:body === undefined ? undefined : JSON.stringify(body),
   });
   const content = await response.text();
   let value;
   try { value = content ? JSON.parse(content) : null; } catch {value=null;}
-  if (!response.ok) throw new Error(`Neon veri servisi isteği reddetti (${response.status}).`);
+  if (!response.ok) {
+    const safe = typeof value?.message === 'string' ? value.message.slice(0,230)
+      : typeof value?.details === 'string' ? value.details.slice(0,230) : '';
+    throw new Error(safe || `Neon veri servisi isteği reddetti (${response.status}).`);
+  }
   return value;
 }
+const request = (method,query,body) => requestResource(method,'entity_records',query,body);
 
 function record(row) {
   if (!row || typeof row !== 'object') return null;
@@ -75,6 +85,22 @@ async function ownedRecords(type) {
     if (offset>=1900) throw new Error('Çok fazla kayıt var; sunucu üzerinden sayfalama gerekiyor.');
   }
   return result;
+}
+
+
+async function visibleRecords(type) {
+  const owned = await ownedRecords(type);
+  if (type === 'WorkRequest') {
+    const publicRows = await requestResource('GET','published_work_requests','?select=*&limit=100');
+    if (!Array.isArray(publicRows)) throw new Error('Yayımlanmış iş talepleri alınamadı.');
+    return mergeById(owned, publicRows.map(normalizePublicWorkRequest));
+  }
+  if (type === 'Offer') {
+    const incoming = await requestResource('GET','incoming_offers','?select=*&limit=200');
+    if (!Array.isArray(incoming)) throw new Error('Gelen teklifler alınamadı.');
+    return mergeById(owned, incoming.map(normalizeIncomingOffer));
+  }
+  return owned;
 }
 
 function matches(record, criteria={}) {
@@ -107,7 +133,7 @@ function order(rows,sort='-created_date') {
 }
 
 function entity(type) {
-  const readOwn=async()=>ownedRecords(type);
+  const readOwn=async()=>visibleRecords(type);
   return {
     list:async(sort='-created_date',limit=100)=>asLegacyCollection(order(await readOwn(),sort).slice(0,Number(limit)||100)),
     filter:async(q={},opts={})=>asLegacyCollection(order((await readOwn()).filter(x=>matches(x,q)),opts?.sort||'-created_date').slice(0,Number(opts?.limit)||100)),
@@ -122,6 +148,11 @@ function entity(type) {
     },
     create:async(data)=>{
       if(!WRITABLE_ENTITY_TYPES.has(type))throw new Error(DENY_MESSAGE);
+      if(type==='Offer') {
+        const result=await requestResource('POST','rpc/submit_work_request_offer','',offerRpcArgs(data));
+        if(!result?.ok||!result?.id)throw new Error('Teklif işlemi doğrulanamadı.');
+        return { ...data,id:result.id,status:result.status,notification_status:result.notification_status };
+      }
       const {userId}=await credentials();
       const payload={...data};
       for(const key of ['id','created_date','updated_date','created_by'])delete payload[key];
@@ -148,7 +179,14 @@ function entity(type) {
 const entities=new Proxy({}, {get:(_,type)=>type==='then'?undefined:entity(String(type))});
 export const base44={
   entities,
-  functions:{invoke:unavailable},
+  functions:{invoke:async(name,args={})=>{
+    if(name==='decideOffer') {
+      if(!args?.offer_id||!['accept','reject','shortlist'].includes(args?.decision)) throw new Error('Geçersiz karar.');
+      return requestResource('POST','rpc/decide_work_request_offer','',
+        {p_offer_id:args.offer_id,p_decision:args.decision});
+    }
+    throw new Error(DENY_MESSAGE);
+  }},
   integrations:{Core:new Proxy({}, {get:()=>unavailable})},
   app:{getPublicSettings:async()=>({public_settings:{}})},
   auth:{

@@ -15,7 +15,7 @@ jobs:
         working-directory: original-site
         run: npm install --no-audit --no-fund
       - name: Test original Base44 list/filter compatibility
-        run: node --test original-site/tests/legacyCollection.test.mjs
+        run: node --test original-site/tests/*.test.mjs
       - name: Build original React interface
         working-directory: original-site
         run: npm run build
