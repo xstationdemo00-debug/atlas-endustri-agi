@@ -1,0 +1,29 @@
+name: Neon owner-only access checks
+on:
+  push:
+    branches: [base44-original-preview]
+    paths:
+      - '.github/workflows/neon-owner-security.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify anonymous requests cannot read original Base44 records
+        run: |
+          python - <<'PY'
+          import urllib.request, urllib.error, json
+          api='https://ep-raspy-sound-baqnilnh.apirest.c-8.eu-central-1.aws.neon.tech/neondb/rest/v1'
+          req=urllib.request.Request(api+'/entity_records?select=id&limit=1',headers={'Accept-Profile':'atlas_app'})
+          try:
+              with urllib.request.urlopen(req,timeout=40) as response:
+                  raise SystemExit(f'UNSAFE: anonymous data query returned status {response.status}')
+          except urllib.error.HTTPError as e:
+              print('ANONYMOUS_READ_DENIED',e.code)
+              assert e.code in (401,403,404), e.code
+          jwks='https://ep-raspy-sound-baqnilnh.neonauth.c-8.eu-central-1.aws.neon.tech/neondb/auth/.well-known/jwks.json'
+          with urllib.request.urlopen(jwks,timeout=40) as response:
+              data=json.load(response)
+              assert response.status==200 and isinstance(data.get('keys'),list)
+              print('PUBLIC_SIGNING_KEYS_READY',len(data['keys']))
+          PY
