@@ -21,6 +21,14 @@ jobs:
           except urllib.error.HTTPError as e:
               print('ANONYMOUS_READ_DENIED',e.code)
               assert e.code in (401,403,404), e.code
+          req_public=urllib.request.Request(api+'/published_tenders?select=id,title,deadline,source_url&limit=20',headers={'Accept-Profile':'atlas_app'})
+          with urllib.request.urlopen(req_public,timeout=40) as response:
+              tenders=json.load(response)
+              assert response.status==200 and isinstance(tenders,list)
+              assert len(tenders)>=1
+              for row in tenders:
+                  assert row['source_url'].startswith('https://')
+              print('ATLAS_APPROVED_PUBLIC_TENDERS_OK',len(tenders))
           jwks='https://ep-raspy-sound-baqnilnh.neonauth.c-8.eu-central-1.aws.neon.tech/neondb/auth/.well-known/jwks.json'
           with urllib.request.urlopen(jwks,timeout=40) as response:
               data=json.load(response)
