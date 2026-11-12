@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from uuid import uuid4
-from sqlalchemy import Boolean, Column, DateTime, String, Text, select
+from sqlalchemy import Boolean, Column, DateTime, String, Text, select, text
 from sqlalchemy.orm import Session
 from .database import Base, get_engine
 
@@ -74,3 +74,24 @@ def list_approved_projects(limit: int = 20) -> list[dict]:
             "scope_summary": p.scope_summary,
             "public_source_url": p.public_source_url or "",
         } for p in records]
+
+
+def list_public_tenders(limit: int = 30) -> list[dict]:
+    """Return *only* sanitized and source-checked tenders from the DB view.
+
+    The view exposes no contact details and never includes demo, unverified,
+    unpublished or private Base44 records. It is the sole public entrypoint.
+    """
+    engine = get_engine()
+    if engine is None:
+        raise RuntimeError("Database not configured")
+    with Session(engine) as session:
+        result = session.execute(text(
+            "SELECT id,title,buyer_name,buyer_type,opportunity_type,notice_reference,"
+            "city,country,industry,public_summary,source_platform,source_url,deadline,"
+            "deadline_time,deadline_passed,required_capabilities,related_sectors,"
+            "publication_checked_at,qualification_checked "
+            "FROM atlas_app.published_tenders "
+            "ORDER BY deadline_passed ASC,deadline ASC LIMIT :limit"
+        ), {"limit": min(30, max(1, limit))}).mappings().all()
+        return [dict(row) for row in result]
