@@ -30,18 +30,12 @@ export default function TenderBoard(){
  async function load(){
   setLoading(true);setError('');
   try{
-   const api=import.meta.env.VITE_NEON_DATA_API_URL;
-   if(!api)throw new Error('Neon veri servisi yapılandırılmadı.');
-   const res=await fetch(api+'/published_tenders?select=*&order=deadline.asc',{
-     method:'GET',cache:'no-store',credentials:'omit',headers:{'Accept':'application/json','Accept-Profile':'atlas_app'}
-   });
+   const api='https://atlas-endustri-agi-independent.onrender.com/api/tenders';
+   const res=await fetch(api,{method:'GET',cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
    const data=await res.json();
-   if(!res.ok||!Array.isArray(data))throw new Error('İhale verileri alınamadı.');
-   // Only previously source-checked, non-demo, publicly permitted listings.
-   // Database view strictly enforces allowed sources and does not expose private records.
-   const verified=data.filter(x=>x.source_url && x.notice_reference && /^https:\/\//.test(x.source_url));
-   verified.sort((a,b)=>Number(a.deadline_passed)-Number(b.deadline_passed)||a.deadline.localeCompare(b.deadline));
-   setTenders(verified);setUpdatedAt(new Date().toISOString());
+   if(!res.ok||!data.ok||!Array.isArray(data.tenders))throw new Error('İhale verileri alınamadı.');
+   setTenders(data.tenders);
+   setUpdatedAt(data.generated_at||'');
   }catch(e){setError('Fırsat listesine şu anda erişilemiyor. Lütfen resmî kaynak portallarını kullanın.');}
   finally{setLoading(false);}
  }
