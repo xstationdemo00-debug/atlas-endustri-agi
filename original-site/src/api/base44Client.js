@@ -9,6 +9,7 @@
  *   rather than pretending that a remote action succeeded.
  */
 import { neonAuth } from '@/lib/neonAuthClient';
+import { asLegacyCollection } from '@/lib/legacyCollection';
 
 const DATA_API = import.meta.env.VITE_NEON_DATA_API_URL || '';
 const WRITABLE_ENTITY_TYPES = new Set(['Project', 'WorkRequest', 'Offer', 'WorkerProfile', 'Team', 'Company']);
@@ -59,6 +60,7 @@ function record(row) {
     created_date: row.created_at,
     updated_date: row.updated_at,
     created_by: row.owner_auth_user_id,
+    created_by_id: row.owner_auth_user_id,
   };
 }
 
@@ -107,8 +109,8 @@ function order(rows,sort='-created_date') {
 function entity(type) {
   const readOwn=async()=>ownedRecords(type);
   return {
-    list:async(sort='-created_date',limit=100)=>order(await readOwn(),sort).slice(0,Number(limit)||100),
-    filter:async(q={},opts={})=>order((await readOwn()).filter(x=>matches(x,q)),opts?.sort||'-created_date').slice(0,Number(opts?.limit)||100),
+    list:async(sort='-created_date',limit=100)=>asLegacyCollection(order(await readOwn(),sort).slice(0,Number(limit)||100)),
+    filter:async(q={},opts={})=>asLegacyCollection(order((await readOwn()).filter(x=>matches(x,q)),opts?.sort||'-created_date').slice(0,Number(opts?.limit)||100)),
     count:async(q={})=>(await readOwn()).filter(x=>matches(x,q)).length,
     get:async(id)=>{const rows=await readOwn();const row=rows.find(x=>x.id===id);if(!row)throw new Error('Kayıt bulunamadı veya erişim yetkiniz yok.');return row;},
     aggregate:async({query={},groupBy}={})=>{
