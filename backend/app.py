@@ -6,14 +6,16 @@ import hashlib
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
 from .database import healthcheck_db, save_inquiry
-from .network import create_network_application, list_approved_projects
+from .network import create_network_application, list_approved_projects, list_public_tenders
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "dist"
 app = FastAPI(title="Atlas Endüstri Ağı — bağımsız pilot", docs_url=None, redoc_url=None)
+app.add_middleware(CORSMiddleware, allow_origins=["https://atlas-endustri-orijinal-arayuz.onrender.com"], allow_credentials=False, allow_methods=["GET","OPTIONS"], allow_headers=["Accept","Content-Type"], max_age=600)
 
 ALLOWED_NETWORK_KINDS = {"worker", "team", "company"}
 ALLOWED_TYPES = {"supplier_research", "subcontractor_research", "technical_review"}
@@ -84,6 +86,13 @@ def network_interest(body: NetworkInterestInput, request: Request):
     RATELIMIT[key] = previous
     return {"received": True, "reference": reference, "status": "pending"}
 
+
+@app.get("/api/tenders")
+def published_tenders():
+    try:
+        return {"ok": True, "tenders": list_public_tenders(), "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
+    except (SQLAlchemyError, RuntimeError):
+        raise HTTPException(status_code=503, detail="İhale listesi şu anda görüntülenemiyor.")
 
 @app.get("/api/projects")
 def approved_public_projects():
