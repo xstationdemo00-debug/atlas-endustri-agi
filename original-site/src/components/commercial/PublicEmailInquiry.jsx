@@ -44,7 +44,7 @@ export default function PublicEmailInquiry(){
    <p className="mt-2 max-w-3xl text-xs leading-6 text-slate-600">
     Bu ekran e-postanızı otomatik göndermez veya verilerinizi Atlas veritabanına yazmaz.
     Alanları doldurunca telefonunuzun veya bilgisayarınızın e-posta uygulaması hazırlanır; gönderme kararını siz verirsiniz.
-    İsterseniz doğrulanmış hesapla <a href="/guvenli-talep" className="font-bold underline">güvenli formu</a> da kullanabilirsiniz.
+    İsterseniz doğrulanmış hesapla <a href="/#/guvenli-talep" className="font-bold underline">güvenli formu</a> da kullanabilirsiniz.
    </p>
    <div className="mt-5 grid gap-3 sm:grid-cols-2">
     {[
