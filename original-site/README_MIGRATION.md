@@ -10,3 +10,7 @@ Bu sürüm demo `admin` sahteciliğini kaldırır ve Neon Auth Better Auth `getS
 
 ## Güvenlik
 Neon Auth URL halka açık konfigürasyondur; yönetici şifresi, veritabanı bağlantı dizesi veya Base44 tokenı tarayıcı paketine girmez. Önizleme ortamındaki bütün Base44 CRUD işlemleri engellenir.
+
+## 12 Kasım 2026: Neon Data API/RLS 
+
+Neon Data API yalnızca `atlas_app` şemasına açılmıştır. PostgreSQL RLS tüm kayıtlar için zorunlu ve yalnızca onaylanmış `auth.user_id()` sahibi kendi yeni kaydını görür. Legacy 327 Base44 kaydının `owner_auth_user_id` alanı boş tutulmuştur; oturum açan kullanıcılar bunları göremez. Public/anon rolünde tablo erişimi yoktur. Şimdilik kullanıcı kendi `Project`, `WorkRequest`, `Offer`, `WorkerProfile`, `Team`, `Company` kaydını oluşturabilir, listeleyebilir ve payload güncelleyebilir. Silme, toplu mutasyonlar, firma üyelikleri, başka kullanıcılara teklif/ihale gönderimi, iş akışları, yöneticiler ve 13 Base44 fonksiyonu etkin değildir. Kayıtların başka kullanıcılar veya firma ekipleriyle paylaşılabilmesi için ayrı iş kuralları ve yetkilendirme gereklidir.
