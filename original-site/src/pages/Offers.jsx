@@ -11,20 +11,25 @@ export default function Offers() {
   const { user } = useAuth() || {};
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [tab, setTab] = useState('incoming');
 
   const load = async () => {
-    const page = await base44.entities.Offer.filter({}, { sort: '-created_date', limit: 200 });
-    setOffers(page.items || []);
-    setLoading(false);
+    setLoading(true); setError('');
+    try {
+      const page = await base44.entities.Offer.filter({}, { sort: '-created_date', limit: 200 });
+      setOffers(page.items || []);
+    } catch (err) {
+      setOffers([]); setError(err.message || 'Teklif listesi alınamadı.');
+    } finally { setLoading(false); }
   };
 
   useEffect(() => {
     if (user) load();
   }, [user?.id]);
 
-  const incoming = offers.filter((offer) => offer.owner_email === user?.email);
-  const outgoing = offers.filter((offer) => offer.applicant_email === user?.email || offer.created_by_id === user?.id);
+  const incoming = offers.filter((offer) => offer.request_owner_auth_user_id === user?.id);
+  const outgoing = offers.filter((offer) => offer.created_by_id === user?.id);
   const current = tab === 'incoming' ? incoming : outgoing;
 
   return (
@@ -34,6 +39,7 @@ export default function Offers() {
         description="Kendi projelerinize gelen teklifleri değerlendirin, verdiğiniz teklifleri takip edin."
       />
 
+      {error && <p role="alert" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">{error}</p>}
       <div className="inline-flex rounded-lg border border-border bg-card p-1">
         {[
           { key: 'incoming', label: `Gelen teklifler (${incoming.length})` },

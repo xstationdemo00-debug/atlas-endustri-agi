@@ -6,12 +6,16 @@ import { formatMoney, formatDate } from '@/lib/format';
 
 export default function OfferList({ offers, canDecide, onDecided }) {
   const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState('');
 
   const decide = async (offer, decision) => {
     setBusyId(offer.id);
+    setError('');
     try {
       await base44.functions.invoke('decideOffer', { offer_id: offer.id, decision });
       await onDecided?.();
+    } catch (err) {
+      setError(err.message || 'Teklif kararı tamamlanamadı.');
     } finally {
       setBusyId(null);
     }
@@ -23,6 +27,7 @@ export default function OfferList({ offers, canDecide, onDecided }) {
 
   return (
     <div className="divide-y divide-border">
+      {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-900">{error}</p>}
       {offers.map((offer) => (
         <div key={offer.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
           <div className="min-w-0">
@@ -44,8 +49,8 @@ export default function OfferList({ offers, canDecide, onDecided }) {
                 <Button size="sm" variant="outline" disabled={busyId === offer.id} onClick={() => decide(offer, 'shortlist')}>
                   Kısa liste
                 </Button>
-                <Button size="sm" disabled={busyId === offer.id} onClick={() => decide(offer, 'accept')}>
-                  Kabul et
+                <Button size="sm" disabled title="Sözleşme, ücret, SGK ve İSG kontrolü bitmeden kabul kapalıdır.">
+                  Kabul: belge kontrolü gerekli
                 </Button>
                 <Button size="sm" variant="ghost" className="text-destructive" disabled={busyId === offer.id} onClick={() => decide(offer, 'reject')}>
                   Reddet

@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export default function OfferDialog({ request, user, company }) {
+export default function OfferDialog({ request, user, company, onCreated }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     applicant_name: user?.full_name || '',
-    applicant_type: 'company',
+    applicant_type: 'individual',
     team_size: '',
     amount: '',
     duration_days: '',
@@ -23,8 +24,10 @@ export default function OfferDialog({ request, user, company }) {
 
   const submit = async (event) => {
     event.preventDefault();
-    setSaving(true);
+    setError(''); setSaving(true);
     try {
+      if(form.applicant_type==='company' && !company?.id)
+        throw new Error('Firma teklifi için önce firmanızı kaydedip doğrulatın.');
       const newOffer = await base44.entities.Offer.create({
         work_request_id: request.id,
         project_id: request.project_id,
@@ -41,11 +44,12 @@ export default function OfferDialog({ request, user, company }) {
         team_size: Number(form.team_size) || 1,
         notes: form.notes,
       });
-      // Güvenli bildirim yetkisi: gerçek işveren adresi sunucuda doğrulanır.
-      // Bildirim başarısız olursa oluşturulmuş teklif korunur.
-      try { await base44.functions.invoke('notifyOfferSubmission', { offer_id: newOffer.id }); }
-      catch (error) { console.warn('Teklif oluştu; güvenli bildirim ayrıca kontrol edilmeli.'); }
+      // Neon sunucusu doğrulanmış işverene bildirimi aynı işlem içinde yazar.
+      if (!newOffer?.id) throw new Error('Teklif kaydı doğrulanamadı.');
+      onCreated?.();
       setOpen(false);
+    } catch (err) {
+      setError(err.message || 'Teklif güvenle gönderilemedi.');
     } finally {
       setSaving(false);
     }
@@ -61,6 +65,8 @@ export default function OfferDialog({ request, user, company }) {
           <DialogTitle>Teklif ver · {request.trade}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
+          <p className="text-xs text-amber-900 rounded bg-amber-50 border border-amber-200 p-2">Teklif göndermek sözleşme kurulması anlamına gelmez. İmzalı sözleşme, SGK ve İSG kontrolleri tamamlanmadan kabul işlemi yapılamaz.</p>
+          {error && <p role="alert" className="text-sm rounded bg-red-50 border border-red-300 p-2 text-red-800">{error}</p>}
           <div>
             <Label>Teklif sahibi</Label>
             <Input required value={form.applicant_name} onChange={set('applicant_name')} placeholder="Ad Soyad / Firma" />
@@ -83,7 +89,7 @@ export default function OfferDialog({ request, user, company }) {
             </div>
             <div>
               <Label>Toplam tutar ({request.currency})</Label>
-              <Input required type="number" value={form.amount} onChange={set('amount')} placeholder="0" />
+              <Input required min="1" step="0.01" type="number" value={form.amount} onChange={set('amount')} placeholder="0" />
             </div>
             <div>
               <Label>Süre (gün)</Label>

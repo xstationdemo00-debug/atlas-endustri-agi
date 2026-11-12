@@ -14,14 +14,18 @@ export default function WorkRequests() {
   const { user } = useAuth() || {};
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [trade, setTrade] = useState('all');
 
   const load = async () => {
-    setLoading(true);
-    const page = await base44.entities.WorkRequest.filter({}, { sort: '-created_date', limit: 100 });
-    setRequests(page.items || []);
-    setLoading(false);
+    setLoading(true); setError('');
+    try {
+      const page = await base44.entities.WorkRequest.filter({}, { sort: '-created_date', limit: 100 });
+      setRequests(page.items || []);
+    } catch (err) {
+      setRequests([]); setError(err.message || 'İş talepleri alınamadı.');
+    } finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -61,6 +65,7 @@ export default function WorkRequests() {
         </Select>
       </div>
 
+      {error && <p role="alert" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">{error}</p>}
       {loading ? (
         <p className="py-10 text-center text-sm text-muted-foreground">İş talepleri yükleniyor...</p>
       ) : filtered.length === 0 ? (
@@ -75,7 +80,8 @@ export default function WorkRequests() {
             const filled = request.filled_count || 0;
             const headcount = request.headcount || 0;
             const percent = headcount ? Math.min(100, Math.round((filled / headcount) * 100)) : 0;
-            const isMine = request.owner_email === user?.email;
+            const isMine = request.created_by_id === user?.id || (!!request.owner_email && request.owner_email === user?.email);
+            const published = request.is_public_listing === true;
 
             return (
               <div key={request.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -112,9 +118,9 @@ export default function WorkRequests() {
 
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground">
-                    {isMine ? 'Kendi talebiniz' : 'Teklif verebilirsiniz'}
+                    {isMine ? 'Kendi talebiniz · yayın için firma/proje onayı gerekir' : published ? 'Onaylı iş talebi · teklif verebilirsiniz' : 'Onay bekliyor'}
                   </span>
-                  {!isMine && <OfferDialog request={request} user={user} onCreated={load} />}
+                  {!isMine && published && <OfferDialog request={request} user={user} onCreated={load} />}
                 </div>
               </div>
             );
