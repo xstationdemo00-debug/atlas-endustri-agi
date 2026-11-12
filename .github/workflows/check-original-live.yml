@@ -19,11 +19,11 @@ jobs:
                       assert r.status == 200
                       assert 'Atlas Endüstri Ağı' in html
                       assert 'ÖNİZLEMESİ' in html
-                  with urllib.request.urlopen(base+'/projeler',timeout=40) as r:
+                  with urllib.request.urlopen(base+'/#/projeler',timeout=40) as r:
                       assert r.status==200
                       assert b'id="root"' in r.read()
                   print('ATLAS_ORIGINAL_UI_HTTP_OK')
-                  print('ATLAS_ORIGINAL_MENU_SPA_ROUTE_OK')
+                  print('ATLAS_ORIGINAL_HASH_MENU_ROUTE_OK')
                   break
               except Exception as exc:
                   print('Attempt', attempt+1, 'failed:',repr(exc))
