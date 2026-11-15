@@ -32,7 +32,9 @@ async function credentials() {
 async function requestResource(method, resource, query='', body) {
   if (!['entity_records','published_work_requests','incoming_offers',
        'rpc/submit_work_request_offer','rpc/decide_work_request_offer',
-       'rpc/current_member_role','rpc/admin_review_queue','rpc/admin_moderate_record'].includes(resource)) {
+       'rpc/current_member_role','rpc/admin_review_queue','rpc/admin_moderate_record',
+       'rpc/invite_company_member','rpc/list_company_members',
+       'rpc/my_company_invitations','rpc/accept_company_invitation'].includes(resource)) {
     throw new Error('Desteklenmeyen Atlas veri yolu.');
   }
   const {token} = await credentials();
@@ -134,6 +136,14 @@ function order(rows,sort='-created_date') {
 }
 
 function entity(type) {
+  if (type==='CompanyMember') return {
+    filter:async(criteria={})=>{
+      if(!criteria?.company_id) throw new Error('Firma kimliği gerekli.');
+      const rows=await requestResource('POST','rpc/list_company_members','',{p_company_id:criteria.company_id});
+      return asLegacyCollection(Array.isArray(rows)?rows:[]);
+    },
+    list:unavailable,create:unavailable,update:unavailable,delete:unavailable,
+  };
   const readOwn=async()=>visibleRecords(type);
   return {
     list:async(sort='-created_date',limit=100)=>asLegacyCollection(order(await readOwn(),sort).slice(0,Number(limit)||100)),
@@ -181,6 +191,20 @@ const entities=new Proxy({}, {get:(_,type)=>type==='then'?undefined:entity(Strin
 export const base44={
   entities,
   functions:{invoke:async(name,args={})=>{
+    if(name==='myCompanyInvitations')
+      return requestResource('POST','rpc/my_company_invitations','',{});
+    if(name==='acceptCompanyInvitation') {
+      if(!args?.invitation_id)throw new Error('Davet kimliği gerekli.');
+      const result=await requestResource('POST','rpc/accept_company_invitation','',{p_invitation_id:args.invitation_id});
+      return {data:result};
+    }
+    if(name==='inviteCompanyMember') {
+      if(!args?.company_id || !args?.email)throw new Error('Firma ve e-posta gerekli.');
+      const result=await requestResource('POST','rpc/invite_company_member','',{
+        p_company_id:args.company_id,p_email:args.email
+      });
+      return {data:result};
+    }
     if(name==='currentMemberRole')
       return requestResource('POST','rpc/current_member_role','',{});
     if(name==='adminReviewQueue')

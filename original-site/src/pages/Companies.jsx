@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { COMPANY_TYPES } from '@/lib/format';
 import { getMyCompany } from '@/lib/tenant';
+import { normalizeMembershipRows,canManageCompany } from '@/lib/neonCompanyMembers';
 
 export default function Companies() {
   const { user } = useAuth() || {};
@@ -21,22 +22,33 @@ export default function Companies() {
   const [documents, setDocuments] = useState([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteError, setInviteError] = useState('');
+  const [inviteNotice, setInviteNotice] = useState('');
+  const [invitations, setInvitations] = useState([]);
+  const [accepting, setAccepting] = useState(null);
   const [inviting, setInviting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [all, mine] = await Promise.all([base44.entities.Company.list(), getMyCompany(user)]);
-    setCompanies(all);
-    setMyCompany(mine);
-    if (mine) {
-      const [list, docs] = await Promise.all([
-        base44.entities.CompanyMember.filter({ company_id: mine.id }),
-        base44.entities.CompanyDocument.filter({ company_id: mine.id }, { limit: 100 }),
+    try {
+      const [all, mine, ownInvitations] = await Promise.all([
+        base44.entities.Company.list(), getMyCompany(user),
+        base44.functions.invoke('myCompanyInvitations', {}),
       ]);
-      setMembers(list);
-      setDocuments(docs.items || []);
-    }
-    setLoading(false);
+      setInvitations(normalizeMembershipRows(ownInvitations).filter(x => x.status === 'invited'));
+      setCompanies(mine && !all.some(x => x.id === mine.id) ? [mine,...all] : all);
+      setMyCompany(mine);
+      if (mine && canManageCompany(mine,user) && mine.verification_status === 'verified') {
+        const [list, docs] = await Promise.all([
+          base44.entities.CompanyMember.filter({ company_id: mine.id }),
+          base44.entities.CompanyDocument.filter({ company_id: mine.id }, { limit: 100 }),
+        ]);
+        setMembers(list);
+        setDocuments(docs.items || []);
+      } else {
+        setMembers([]); setDocuments([]);
+      }
+    } catch(err) { setInviteError(err.message || 'Firma kayıtları yüklenemedi.'); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -46,8 +58,11 @@ export default function Companies() {
   const invite = async (event) => {
     event.preventDefault();
     if (!inviteEmail || !myCompany || inviting) return;
+    if (!canManageCompany(myCompany,user) || myCompany.verification_status !== 'verified') {
+      setInviteError('Üye daveti için doğrulanmış firma sahibi olmanız gerekiyor.'); return;
+    }
     setInviting(true);
-    setInviteError('');
+    setInviteError('');setInviteNotice('');
     try {
       const res = await base44.functions.invoke('inviteCompanyMember', {
         company_id: myCompany.id,
@@ -55,12 +70,24 @@ export default function Companies() {
       });
       if (res?.data?.ok !== true) throw new Error(res?.data?.error || 'Davet doğrulanamadı.');
       setInviteEmail('');
+      setInviteNotice(res.data.message || 'Davet kaydedildi; e-posta gönderilmedi.');
       await load();
     } catch (error) {
       setInviteError(error?.message || 'Güvenli davet işlemi tamamlanamadı.');
     } finally {
       setInviting(false);
     }
+  };
+
+  const acceptInvitation = async (id) => {
+    setAccepting(id); setInviteError('');setInviteNotice('');
+    try {
+      const reply=await base44.functions.invoke('acceptCompanyInvitation',{invitation_id:id});
+      if(reply?.data?.ok!==true)throw new Error('Davet doğrulanamadı.');
+      setInviteNotice('Firma üyeliğiniz etkinleştirildi.');
+      await load();
+    } catch(err) { setInviteError(err?.message || 'Davet kabul edilemedi.'); }
+    finally { setAccepting(null); }
   };
 
   const typeLabel = (value) => COMPANY_TYPES.find((item) => item.value === value)?.label || 'Firma';
@@ -71,7 +98,7 @@ export default function Companies() {
         title="Firmalar"
         description="Ağdaki ana yükleniciler, alt yükleniciler ve tedarikçiler; kendi firma profiliniz ve ekibiniz."
       >
-        <CompanyDialog user={user} company={myCompany} onSaved={load} />
+        {(!myCompany || canManageCompany(myCompany,user)) && <CompanyDialog user={user} company={myCompany} onSaved={load} />}
       </PageHeader>
 
       {!myCompany && !loading && (
@@ -86,9 +113,22 @@ export default function Companies() {
         </div>
       )}
 
+      {invitations.length>0 && (
+        <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 space-y-2" aria-label="Bekleyen firma davetleri">
+          <h2 className="text-sm font-bold text-sky-950">Bekleyen firma üyeliği</h2>
+          {invitations.map(item => (
+            <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm text-sky-900">
+              <span>{item.company_name} · {item.role==='manager'?'Yönetici yardımcısı':'Üye'}</span>
+              <Button type="button" size="sm" disabled={accepting===item.id} onClick={()=>acceptInvitation(item.id)}>
+                {accepting===item.id?'Doğrulanıyor...':'Daveti kabul et'}
+              </Button>
+            </div>
+          ))}
+        </section>
+      )}
       {myCompany && (
         <section className="space-y-3">
-          <CompanyVerificationCard company={myCompany} documents={documents} />
+          {canManageCompany(myCompany,user) && <CompanyVerificationCard company={myCompany} documents={documents} />}
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -101,7 +141,7 @@ export default function Companies() {
                 </p>
               </div>
               <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                Yetkili: {user?.email}
+                {canManageCompany(myCompany,user) ? 'Firma sahibi' : 'Firma üyesi'}: {user?.email}
               </span>
             </div>
             {myCompany.trades?.length > 0 && (
@@ -111,7 +151,7 @@ export default function Companies() {
                 ))}
               </div>
             )}
-            <div className="mt-4 border-t border-border pt-3">
+            {canManageCompany(myCompany,user) && myCompany.verification_status==='verified' && <div className="mt-4 border-t border-border pt-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Firma ekibi</p>
               <div className="mt-2 space-y-1.5">
                 {members.length === 0 && <p className="text-xs text-muted-foreground">Henüz ekip üyesi eklenmedi.</p>}
@@ -130,8 +170,8 @@ export default function Companies() {
                   <UserPlus size={14} className="mr-1.5" /> {inviting ? 'Kontrol ediliyor' : 'Davet et'}
                 </Button>
               </form>
-              {inviteError && <p role="alert" className="mt-2 text-xs font-semibold text-rose-700">{inviteError}</p>}
-            </div>
+              {inviteNotice && <p role="status" className="mt-2 text-xs text-emerald-700">{inviteNotice}</p>}
+            </div>}
           </div>
         </section>
       )}

@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { memberCompany } from '@/lib/neonCompanyMembers';
 
 export async function getMyCompany(user) {
   if (!user) return null;
@@ -6,10 +7,8 @@ export async function getMyCompany(user) {
   const owned = companies.find((company) => company.created_by_id === user.id);
   if (owned) return owned;
 
-  const memberships = await base44.entities.CompanyMember.filter({ email: user.email });
-  if (!memberships.length) return null;
-  const company = await base44.entities.Company.get(memberships[0].company_id).catch(() => null);
-  return company;
+  const invitations = await base44.functions.invoke('myCompanyInvitations', {});
+  return memberCompany(invitations);
 }
 
 export async function notify({ email, title, body, type = 'system', link = '/' }) {

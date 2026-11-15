@@ -155,6 +155,11 @@ export default function CompanyOnboarding() {
   };
 
   if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Firma kaydı yükleniyor...</p>;
+  if (company?.is_member_view) return <div className="mx-auto max-w-3xl rounded-xl border p-6 space-y-3">
+    <h1 className="font-bold">Firma üyeliği</h1>
+    <p className="text-sm">Bu firmada üyelik erişiminiz var. Firma tescil ve doğrulama bilgilerini yalnızca doğrulanmış firma sahibi değiştirebilir.</p>
+    <Link to="/firmalar" className="underline">Firma sayfasına dön</Link>
+  </div>;
 
   const progress = verificationProgress(company, documents);
   const status = company?.verification_status || 'pending';
