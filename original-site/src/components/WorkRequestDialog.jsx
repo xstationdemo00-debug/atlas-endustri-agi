@@ -12,6 +12,7 @@ import { Plus } from 'lucide-react';
 export default function WorkRequestDialog({ project, onCreated }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     trade: project.trade || 'Çelik konstrüksiyon',
     headcount: '',
@@ -26,6 +27,7 @@ export default function WorkRequestDialog({ project, onCreated }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    setError('');
     setSaving(true);
     try {
       await base44.entities.WorkRequest.create({
@@ -51,6 +53,8 @@ export default function WorkRequestDialog({ project, onCreated }) {
       });
       setOpen(false);
       onCreated?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'İş talebi kaydedilemedi.');
     } finally {
       setSaving(false);
     }
@@ -66,6 +70,7 @@ export default function WorkRequestDialog({ project, onCreated }) {
           <DialogTitle>Yeni iş talebi</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
+          {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">{error}</p>}
           <div>
             <Label>Meslek</Label>
             <Select value={form.trade} onValueChange={(v) => setForm((p) => ({ ...p, trade: v }))}>

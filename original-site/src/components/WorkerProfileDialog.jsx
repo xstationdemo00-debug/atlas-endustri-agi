@@ -13,6 +13,7 @@ import { UserPlus } from 'lucide-react';
 export default function WorkerProfileDialog({ user, profile, onSaved }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     full_name: profile?.full_name || user?.full_name || '',
     phone: profile?.phone || '',
@@ -29,6 +30,7 @@ export default function WorkerProfileDialog({ user, profile, onSaved }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    setError('');
     setSaving(true);
     const payload = {
       user_email: user?.email,
@@ -53,6 +55,8 @@ export default function WorkerProfileDialog({ user, profile, onSaved }) {
       }
       setOpen(false);
       await onSaved?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Usta profili kaydedilemedi.');
     } finally {
       setSaving(false);
     }
@@ -70,6 +74,7 @@ export default function WorkerProfileDialog({ user, profile, onSaved }) {
           <DialogTitle>Usta profili</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
+          {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">{error}</p>}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Ad Soyad</Label>

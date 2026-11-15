@@ -13,6 +13,7 @@ import { Building2, Pencil } from 'lucide-react';
 export default function CompanyDialog({ user, company, onSaved }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: company?.name || '',
     legal_name: company?.legal_name || '',
@@ -53,6 +54,7 @@ export default function CompanyDialog({ user, company, onSaved }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    setError('');
     setSaving(true);
     const payload = {
       name: form.name,
@@ -85,6 +87,8 @@ export default function CompanyDialog({ user, company, onSaved }) {
       }
       setOpen(false);
       await onSaved?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Firma bilgileri kaydedilemedi.');
     } finally {
       setSaving(false);
     }
@@ -103,6 +107,7 @@ export default function CompanyDialog({ user, company, onSaved }) {
           <DialogTitle>{company ? 'Firma bilgileri' : 'Firma profili oluştur'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
+          {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">{error}</p>}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Firma adı</Label>

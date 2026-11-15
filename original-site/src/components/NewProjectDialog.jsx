@@ -37,12 +37,14 @@ const initial = {
 export default function NewProjectDialog({ user, company, onCreated }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ ...initial, company_name: company?.name || '' });
 
   const set = (key) => (event) => setForm((prev) => ({ ...prev, [key]: event.target.value }));
 
   const submit = async (event) => {
     event.preventDefault();
+    setError('');
     setSaving(true);
     try {
       await base44.entities.Project.create({
@@ -58,6 +60,8 @@ export default function NewProjectDialog({ user, company, onCreated }) {
       setForm({ ...initial, company_name: company?.name || '' });
       setOpen(false);
       onCreated?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Proje kaydedilemedi.');
     } finally {
       setSaving(false);
     }
@@ -75,6 +79,7 @@ export default function NewProjectDialog({ user, company, onCreated }) {
           <DialogTitle>Yeni proje talebi</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
+          {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">{error}</p>}
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">Bu kayıt önce <strong>Taslak</strong> olarak oluşturulur. Gerçek proje veya ticari taahhüt yayınlanmadan önce firma yetkisi, teknik bilgiler ve uygunluk belgeleri yönetici tarafından kontrol edilmelidir.</div>
           <div>
             <Label>Proje adı</Label>
