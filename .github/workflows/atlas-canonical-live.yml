@@ -1,0 +1,42 @@
+name: Check Atlas canonical original UI live
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/atlas-canonical-live.yml']
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm old pilot entry opens restored Base44 interface while APIs remain local
+        run: |
+          python - <<'PY'
+          import json,time,urllib.request,urllib.error
+          base='https://atlas-endustri-agi-independent.onrender.com'
+          orig='https://atlas-endustri-orijinal-arayuz.onrender.com'
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl):return None
+          opener=urllib.request.build_opener(NoRedirect)
+          for i in range(15):
+              try:
+                  try: opener.open(base+'/',timeout=40)
+                  except urllib.error.HTTPError as err:
+                      assert err.code==302,err.code
+                      assert err.headers.get('Location')==orig+'/#/hizmetler',err.headers.get('Location')
+                      print('ATLAS_CANONICAL_ORIGINAL_REDIRECT_OK')
+                  else: raise RuntimeError('Site still serves old pilot root')
+                  with urllib.request.urlopen(base+'/api/health',timeout=40) as r:
+                      d=json.load(r);assert r.status==200 and d['database']=='ready'
+                      print('ATLAS_BACKEND_NEON_STILL_READY')
+                  with urllib.request.urlopen(base+'/api/captcha-config',timeout=40) as r:
+                      d=json.load(r);assert d['enabled'] is False
+                      print('ATLAS_INDEPENDENT_CAPTCHA_CONFIG_OK')
+                  with urllib.request.urlopen(orig+'/#/hizmetler',timeout=40) as r:
+                      html=r.read().decode('utf-8','replace')
+                      assert r.status==200 and 'id="root"' in html
+                      print('ATLAS_ORIGINAL_UI_HTTP_OK')
+                  break
+              except Exception as e:
+                  print('Retry',i+1,type(e).__name__,str(e)[:200])
+                  if i==14:raise
+                  time.sleep(12)
+          PY
