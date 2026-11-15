@@ -9,6 +9,7 @@ import NewProjectDialog from '@/components/NewProjectDialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getMyCompany } from '@/lib/tenant';
+import { canManageCompany } from '@/lib/neonCompanyMembers';
 import { HardHat } from 'lucide-react';
 
 export default function Projects() {
@@ -48,7 +49,7 @@ export default function Projects() {
         title="Projeler"
         description="Sahadaki projeler, kadro durumu ve eşleşme ihtiyaçları."
       >
-        <NewProjectDialog user={user} company={company} onCreated={load} />
+        {company && canManageCompany(company,user) && <NewProjectDialog user={user} company={company} onCreated={load} />}
       </PageHeader>
 
       <div className="flex flex-col gap-2 sm:flex-row">
