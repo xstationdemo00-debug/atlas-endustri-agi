@@ -26,7 +26,7 @@ export default function HumanVerification({action,onToken}){
   useEffect(()=>{callback.current=onToken;},[onToken]);
   useEffect(()=>{
     let alive=true;
-    fetch('/functions/publicCaptchaConfig',{method:'POST',cache:'no-store'})
+    fetch('https://atlas-endustri-agi-independent.onrender.com/api/captcha-config',{method:'GET',cache:'no-store',credentials:'omit'})
       .then(response=>{if(!response.ok)throw new Error('Bot doğrulama durumu alınamadı.');return response.json();})
       .then(data=>{if(alive)setConfig(data);})
       .catch(()=>{if(alive)setError('Bot doğrulama kontrolü yapılamadı. Tekrar deneyin.');});
@@ -56,6 +56,9 @@ export default function HumanVerification({action,onToken}){
   },[action,config?.enabled,config?.site_key]);
   return (
     <div className="space-y-2">
+      {config?.protection==='verified_neon_auth_with_daily_rate_limit'&&!config.enabled&&(
+        <p className="text-xs text-muted-foreground">Bu form, doğrulanmış üyelik ve günlük başvuru sınırıyla korunur. Cloudflare doğrulaması bağlı değildir.</p>
+      )}
       {config?.enabled&&(
         <>
           <p className="text-xs font-semibold">Otomatik başvuruları engellemek için insan doğrulamasını tamamlayın.</p>
