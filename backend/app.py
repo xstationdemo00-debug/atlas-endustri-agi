@@ -15,7 +15,7 @@ from .network import create_network_application, list_approved_projects, list_pu
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "dist"
 app = FastAPI(title="Atlas Endüstri Ağı — bağımsız pilot", docs_url=None, redoc_url=None)
-app.add_middleware(CORSMiddleware, allow_origins=["https://atlas-endustri-orijinal-arayuz.onrender.com"], allow_credentials=False, allow_methods=["GET","OPTIONS"], allow_headers=["Accept","Content-Type"], max_age=600)
+app.add_middleware(CORSMiddleware, allow_origins=["https://atlas-endustri-orijinal-arayuz.onrender.com"], allow_credentials=False, allow_methods=["GET","POST","OPTIONS"], allow_headers=["Accept","Content-Type"], max_age=600)
 
 ALLOWED_NETWORK_KINDS = {"worker", "team", "company"}
 ALLOWED_TYPES = {"supplier_research", "subcontractor_research", "technical_review"}
