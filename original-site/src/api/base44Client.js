@@ -12,6 +12,7 @@ import { neonAuth } from '@/lib/neonAuthClient';
 import { asLegacyCollection } from '@/lib/legacyCollection';
 import { mergeById, normalizePublicWorkRequest, normalizeIncomingOffer, offerRpcArgs } from '@/lib/neonWorkflows';
 import { canMarkSingleNotification,canMarkAllNotifications } from '@/lib/neonNotifications';
+import {supportRpcArgs,adminSupportArgs,normalizeSupportTicket} from '@/lib/neonSupport';
 
 const DATA_API = import.meta.env.VITE_NEON_DATA_API_URL || '';
 const WRITABLE_ENTITY_TYPES = new Set(['Project', 'WorkRequest', 'Offer', 'WorkerProfile', 'Team', 'Company']);
@@ -35,7 +36,8 @@ async function requestResource(method, resource, query='', body) {
        'rpc/submit_work_request_offer','rpc/decide_work_request_offer',
        'rpc/current_member_role','rpc/admin_review_queue','rpc/admin_moderate_record',
        'rpc/invite_company_member','rpc/list_company_members',
-       'rpc/my_company_invitations','rpc/accept_company_invitation','rpc/mark_my_notifications'].includes(resource)) {
+       'rpc/my_company_invitations','rpc/accept_company_invitation','rpc/mark_my_notifications',
+       'rpc/submit_my_support_ticket','rpc/admin_list_support_tickets','rpc/admin_update_support_ticket'].includes(resource)) {
     throw new Error('Desteklenmeyen Atlas veri yolu.');
   }
   const {token} = await credentials();
@@ -137,6 +139,23 @@ function order(rows,sort='-created_date') {
 }
 
 function entity(type) {
+  if(type==='SupportTicket') return {
+    list:async(sort='-created_date',limit=200)=>{
+      const rows=await requestResource('POST','rpc/admin_list_support_tickets','',{p_limit:Math.min(200,Number(limit)||200)});
+      if(!Array.isArray(rows))throw new Error('Destek yönetimi yanıtı geçersiz.');
+      return asLegacyCollection(rows.map(normalizeSupportTicket));
+    },
+    update:async(id,patch={})=>{
+      const rows=await requestResource('POST','rpc/admin_list_support_tickets','',{p_limit:200});
+      const current=Array.isArray(rows)?rows.find(x=>x.id===id):null;
+      if(!current)throw new Error('Destek kaydı bulunamadı veya yönetici yetkisi yok.');
+      const result=await requestResource('POST','rpc/admin_update_support_ticket','',adminSupportArgs(current,patch));
+      if(!result?.ok)throw new Error('Destek kaydı güncellenemedi.');
+      return normalizeSupportTicket({...current,...patch});
+    },
+    create:unavailable,delete:unavailable,
+    filter:unavailable,get:unavailable,updateMany:unavailable,count:unavailable,
+  };
   if (type==='CompanyMember') return {
     filter:async(criteria={})=>{
       if(!criteria?.company_id) throw new Error('Firma kimliği gerekli.');
@@ -206,6 +225,11 @@ const entities=new Proxy({}, {get:(_,type)=>type==='then'?undefined:entity(Strin
 export const base44={
   entities,
   functions:{invoke:async(name,args={})=>{
+    if(name==='submitSupportTicket'){
+      const data=await requestResource('POST','rpc/submit_my_support_ticket','',supportRpcArgs(args));
+      if(!data?.ok||!data?.ticket_code)throw new Error('Destek talebi kaydedilemedi.');
+      return {data};
+    }
     if(name==='myCompanyInvitations')
       return requestResource('POST','rpc/my_company_invitations','',{});
     if(name==='acceptCompanyInvitation') {

@@ -18,6 +18,8 @@ jobs:
         run: node --test original-site/tests/*.test.mjs
       - name: Verify original services and independent inquiry intake
         run: node --test original-site/tests/commercialIntake.test.mjs
+      - name: Test independent Atlas support workflow
+        run: node --test original-site/tests/neonSupport.test.mjs
       - name: Build original React interface
         working-directory: original-site
         run: npm run build
