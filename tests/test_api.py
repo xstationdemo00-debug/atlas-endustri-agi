@@ -13,10 +13,11 @@ from sqlalchemy import text
 client=TestClient(app)
 
 def test_public_routes_and_health():
-    for route in ['/','/ilk-hizmet','/hizmetler','/nasil-calisir','/gizlilik']:
-        response=client.get(route)
-        assert response.status_code==200, route
-        assert 'ENDÜSTRİ AĞI' in response.text
+    for route in ['/','/ilk-hizmet','/hizmetler','/nasil-calisir','/gizlilik','/projeler']:
+        response=client.get(route,follow_redirects=False)
+        assert response.status_code==302, route
+        assert response.headers['location'].startswith('https://atlas-endustri-orijinal-arayuz.onrender.com/#/')
+        assert response.headers['cache-control']=='no-store'
     r=client.get('/api/health'); assert r.status_code==200 and r.json()['database']=='ready'
     assert client.get('/api/services').json()['worker_fee']==0
 
@@ -112,10 +113,20 @@ def test_network_data_validation_and_private_project_board():
 def test_new_pages_exist_and_safe_frontend_rendering():
     from pathlib import Path
     root=Path(__file__).resolve().parents[1]
-    for route in ['/usta','/firma','/ekip','/projeler']:
+    for route in ['/usta','/firma','/ekip']:
         r=client.get(route)
         assert r.status_code==200
         assert 'id="network-form"' in r.text
     js=(root/'frontend/assets/app.js').read_text()
     assert 'textContent = project.title' in js
     assert 'innerHTML' not in js
+
+
+def test_canonical_original_ui_keeps_backend_and_old_interest_links():
+    assert client.get('/',follow_redirects=False).headers['location'].endswith('/#/hizmetler')
+    assert client.get('/projeler',follow_redirects=False).headers['location'].endswith('/#/projeler')
+    for endpoint in ('/api/health','/api/services'):
+        response=client.get(endpoint,follow_redirects=False)
+        assert response.status_code==200,endpoint
+        assert 'location' not in response.headers
+    assert client.get('/api/inquiries',follow_redirects=False).status_code in (404,405)

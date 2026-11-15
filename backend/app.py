@@ -5,7 +5,7 @@ import time
 import hashlib
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
@@ -170,9 +170,18 @@ def assets(asset_path: str):
         raise HTTPException(status_code=404,detail="Bulunamadı")
     return FileResponse(safe)
 
+ORIGINAL_ATLAS_UI="https://atlas-endustri-orijinal-arayuz.onrender.com"
+
 @app.get("/{page_path:path}")
 def page(page_path: str):
-    if page_path in {"", "ilk-hizmet", "hizmetler", "gizlilik", "nasil-calisir", "usta", "firma", "ekip", "projeler"}:
-        path = FRONTEND / "index.html"
+    # The actual restored Base44 React UI, not the earlier minimal pilot,
+    # is the canonical user-facing Atlas experience. APIs remain on FastAPI.
+    if page_path in {"", "ilk-hizmet", "hizmetler", "gizlilik", "nasil-calisir", "projeler"}:
+        route=page_path or "hizmetler"
+        return RedirectResponse(url=ORIGINAL_ATLAS_UI+"/#/"+route, status_code=302,
+                                headers={"Cache-Control":"no-store"})
+    # Keep direct worker/company/team interest forms accessible to existing links.
+    if page_path in {"usta", "firma", "ekip"}:
+        path=FRONTEND/"index.html"
         if path.is_file():return FileResponse(path)
     raise HTTPException(status_code=404,detail="Sayfa bulunamadı")
