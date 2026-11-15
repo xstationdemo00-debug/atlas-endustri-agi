@@ -1,0 +1,40 @@
+name: Original Atlas public lead - live smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/original-service-smoke.yml']
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify CORS and store one synthetic inquiry from the original front-end
+        run: |
+          python - <<'PY'
+          import json,time,urllib.request,urllib.error
+          host="https://atlas-endustri-agi-independent.onrender.com/api/inquiries"
+          origin="https://atlas-endustri-orijinal-arayuz.onrender.com"
+          pre=urllib.request.Request(host,method="OPTIONS",headers={
+            "Origin":origin,"Access-Control-Request-Method":"POST",
+            "Access-Control-Request-Headers":"content-type"})
+          with urllib.request.urlopen(pre,timeout=45) as r:
+            assert r.status==200
+            assert r.headers.get("Access-Control-Allow-Origin")==origin
+            print("ATLAS_ORIGINAL_SERVICE_PREFLIGHT_OK")
+          payload={
+            "company_name":"ATLAS MIGRATION SMOKE - GERCEK FIRMA DEGIL",
+            "contact_name":"Sentetik test",
+            "contact_email":"atlas-migration-smoke-"+str(int(time.time()))+"@example.invalid",
+            "city":"TEST",
+            "service_type":"supplier_research",
+            "description":"Sadece yeni Atlas orijinal hizmetler sayfasi ve Neon yazma dogrulamasi icin test kaydi. Gercek bir musteri talebi degildir.",
+            "consent":True,"website":""}
+          req=urllib.request.Request(host,method="POST",headers={
+            "Origin":origin,"Content-Type":"application/json","Accept":"application/json"},
+            data=json.dumps(payload).encode())
+          with urllib.request.urlopen(req,timeout=45) as r:
+            j=json.load(r)
+            assert r.status==201 and j.get("received") is True and j.get("reference")
+            assert r.headers.get("Access-Control-Allow-Origin")==origin
+            print("ATLAS_ORIGINAL_SERVICE_POST_OK",r.status)
+            print("ATLAS_ORIGINAL_SERVICE_REFERENCE",j["reference"])
+          PY
