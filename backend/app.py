@@ -117,6 +117,14 @@ def health():
     except Exception: db_ok = False
     return {"status": "ok", "database": "ready" if db_ok else "not_configured_or_unreachable", "provider": "independent"}
 
+@app.get("/api/captcha-config")
+def captcha_config():
+    # The original Base44 publicCaptchaConfig moved to independent Render.
+    # Never claim that Turnstile is active without BOTH real keys and
+    # server-side verification in the authenticated support RPC.
+    return {"enabled": False, "site_key": None,
+            "protection": "verified_neon_auth_with_daily_rate_limit"}
+
 @app.get("/api/services")
 def services():
     return {"services": [
