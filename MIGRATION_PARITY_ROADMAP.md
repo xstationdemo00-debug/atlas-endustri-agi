@@ -76,3 +76,11 @@ bazılarında doğrudan dizi bekliyor. Adaptör bu iki tüketimi uyumlu hale get
 şirket sahipliği için `created_by_id` alanını gerçek Neon oturumunun kullanıcı
 kimliğiyle eşler. Bu **yalnızca** yeni sahip olunan kayıtların ekranlara düşmesine
 yardımcı olur, bütün modüllerin tamamlandığını göstermez.
+
+## 15 Kasım 2026 — firma üyeliği geçiş adımı
+- [x] Neon üzerinde doğrulanmış firma sahibine bağlı, RLS ile korunan `company_members` tablosu.
+- [x] Üye daveti oluşturma, doğrulanmış e-posta ile kabul etme, üye listesini sadece firmaya yetkili kişiye sunma; güvenlik nedeniyle sistem otomatik e-posta gönderildiğini iddia etmez.
+- [x] Orijinal `Firmalar` ekranı ve `getMyCompany` fonksiyonu davet/üyelik akışına bağlandı; üye, firma sahibi yetkisi kazanmaz.
+- [x] İlgili migration SQL'i GitHub'a eklendi; Direct SELECT anon ve authenticated için kapalı.
+- [ ] **Canlı kabul testi:** Neon Auth üzerinde doğrulanmış iki gerçek test hesabı olmadığından henüz uçtan uca davet/kabul akışı doğrulanmadı.
+- [ ] Firma üyeleri için proje/teklif iş akışı yetki devirleri, üye davet e-postası ve tüm 13 Base44 fonksiyonunun eşdeğerleri hâlâ eksik.
