@@ -12,11 +12,15 @@ export default function Notifications() {
   const { user } = useAuth() || {};
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error,setError] = useState('');
 
   const load = async () => {
-    const page = await base44.entities.Notification.filter({}, { sort: '-created_date', limit: 50 });
-    setItems(page.items || []);
-    setLoading(false);
+    setError('');
+    try {
+      const page = await base44.entities.Notification.filter({}, { sort: '-created_date', limit: 50 });
+      setItems(page.items || []);
+    } catch(e) {setError(e?.message || 'Bildirimler alınamadı.');}
+    finally {setLoading(false);}
   };
 
   useEffect(() => {
@@ -25,13 +29,17 @@ export default function Notifications() {
 
   const markRead = async (item) => {
     if (item.is_read) return;
-    await base44.entities.Notification.update(item.id, { is_read: true });
-    await load();
+    try {
+      await base44.entities.Notification.update(item.id, { is_read: true });
+      await load();
+    } catch(e){setError(e?.message || 'Bildirim güncellenemedi.');}
   };
 
   const markAll = async () => {
-    await base44.entities.Notification.updateMany({ is_read: false }, { $set: { is_read: true } });
-    await load();
+    try {
+      await base44.entities.Notification.updateMany({ is_read: false }, { $set: { is_read: true } });
+      await load();
+    } catch(e){setError(e?.message || 'Bildirimler güncellenemedi.');}
   };
 
   const unread = items.filter((item) => !item.is_read).length;
@@ -47,6 +55,7 @@ export default function Notifications() {
         )}
       </PageHeader>
 
+      {error && <p role="alert" className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">{error}</p>}
       {loading ? (
         <p className="py-10 text-center text-sm text-muted-foreground">Bildirimler yükleniyor...</p>
       ) : items.length === 0 ? (

@@ -84,3 +84,8 @@ yardımcı olur, bütün modüllerin tamamlandığını göstermez.
 - [x] İlgili migration SQL'i GitHub'a eklendi; Direct SELECT anon ve authenticated için kapalı.
 - [ ] **Canlı kabul testi:** Neon Auth üzerinde doğrulanmış iki gerçek test hesabı olmadığından henüz uçtan uca davet/kabul akışı doğrulanmadı.
 - [ ] Firma üyeleri için proje/teklif iş akışı yetki devirleri, üye davet e-postası ve tüm 13 Base44 fonksiyonunun eşdeğerleri hâlâ eksik.
+
+## 15 Kasım 2026 — Bildirim işlemleri
+- [x] Bildirim okundu işlemleri Neon Auth kimlik doğrulaması ve sunucu tarafı sahiplik kontrolüyle bağlandı.
+- [x] Tekli ve toplu okundu işaretleme sadece kendi bildirimlerinde; başka kullanıcının bildirimini güncelleme reddedilir.
+- [ ] Canlı doğrulanmış kullanıcı testleri yapılmadan tam işlevsel olduğu iddia edilmez.

@@ -11,6 +11,7 @@
 import { neonAuth } from '@/lib/neonAuthClient';
 import { asLegacyCollection } from '@/lib/legacyCollection';
 import { mergeById, normalizePublicWorkRequest, normalizeIncomingOffer, offerRpcArgs } from '@/lib/neonWorkflows';
+import { canMarkSingleNotification,canMarkAllNotifications } from '@/lib/neonNotifications';
 
 const DATA_API = import.meta.env.VITE_NEON_DATA_API_URL || '';
 const WRITABLE_ENTITY_TYPES = new Set(['Project', 'WorkRequest', 'Offer', 'WorkerProfile', 'Team', 'Company']);
@@ -34,7 +35,7 @@ async function requestResource(method, resource, query='', body) {
        'rpc/submit_work_request_offer','rpc/decide_work_request_offer',
        'rpc/current_member_role','rpc/admin_review_queue','rpc/admin_moderate_record',
        'rpc/invite_company_member','rpc/list_company_members',
-       'rpc/my_company_invitations','rpc/accept_company_invitation'].includes(resource)) {
+       'rpc/my_company_invitations','rpc/accept_company_invitation','rpc/mark_my_notifications'].includes(resource)) {
     throw new Error('Desteklenmeyen Atlas veri yolu.');
   }
   const {token} = await credentials();
@@ -173,6 +174,12 @@ function entity(type) {
       return record(result);
     },
     update:async(id,data)=>{
+      if(type==='Notification') {
+        if(!canMarkSingleNotification(data))throw new Error('Bildirimde yalnızca okundu bilgisi değiştirilebilir.');
+        const result=await requestResource('POST','rpc/mark_my_notifications','',{p_notification_id:id});
+        if(!result?.ok || result.updated<1)throw new Error('Bu bildirim size ait değil veya zaten okunmuş.');
+        return {id,is_read:true};
+      }
       if(!WRITABLE_ENTITY_TYPES.has(type))throw new Error(DENY_MESSAGE);
       const existing=await ownedRecords(type);
       const source=existing.find(x=>x.id===id);
@@ -184,7 +191,15 @@ function entity(type) {
       if(!result?.id)throw new Error('Güncelleme reddedildi veya kayıt bulunamadı.');
       return record(result);
     },
-    delete:unavailable, updateMany:unavailable,bulkCreate:unavailable,import:unavailable,
+    delete:unavailable,
+    updateMany:async(criteria={},patch={})=>{
+      if(type==='Notification' && canMarkAllNotifications(criteria,patch)) {
+        const result=await requestResource('POST','rpc/mark_my_notifications','',{p_notification_id:null});
+        if(!result?.ok)throw new Error('Bildirimler güncellenemedi.');
+        return result;
+      }
+      throw new Error(DENY_MESSAGE);
+    },bulkCreate:unavailable,import:unavailable,
   };
 }
 const entities=new Proxy({}, {get:(_,type)=>type==='then'?undefined:entity(String(type))});
