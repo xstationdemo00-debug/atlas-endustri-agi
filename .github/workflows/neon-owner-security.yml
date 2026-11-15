@@ -21,6 +21,23 @@ jobs:
           except urllib.error.HTTPError as e:
               print('ANONYMOUS_READ_DENIED',e.code)
               assert e.code in (401,403,404), e.code
+          # Company members and invitation RPCs must reject anonymous callers.
+          protected_routes=[
+            ('GET','company_members?select=id&limit=1',None),
+            ('POST','rpc/my_company_invitations',b'{}'),
+            ('POST','rpc/list_company_members',b'{"p_company_id":"00000000-0000-4000-8000-000000000000"}'),
+            ('POST','rpc/invite_company_member',b'{"p_company_id":"00000000-0000-4000-8000-000000000000","p_email":"nobody@example.invalid"}')
+          ]
+          for method,resource,body in protected_routes:
+              headers={'Accept-Profile':'atlas_app','Content-Profile':'atlas_app'}
+              if body is not None:headers['Content-Type']='application/json'
+              request=urllib.request.Request(api+'/'+resource,method=method,data=body,headers=headers)
+              try:
+                  with urllib.request.urlopen(request,timeout=40) as response:
+                      raise SystemExit('UNSAFE anonymous access '+resource+' HTTP '+str(response.status))
+              except urllib.error.HTTPError as e:
+                  print('NEON_COMPANY_ANON_DENIED',resource,e.code)
+                  assert e.code in (401,403), 'Unexpected response; check membership auth route: '+resource
           public_url='https://atlas-endustri-agi-independent.onrender.com/api/tenders'
           req_public=urllib.request.Request(public_url,headers={'Origin':'https://atlas-endustri-orijinal-arayuz.onrender.com','Accept':'application/json'})
           with urllib.request.urlopen(req_public,timeout=45) as response:
