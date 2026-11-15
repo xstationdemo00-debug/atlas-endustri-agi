@@ -35,6 +35,14 @@ try {
     assert.ok(body.includes('Atlas Endüstri Ağı'),'Unauthenticated route did not show sign-in');
     console.log('ATLAS_PRIVATE_ROUTE_REQUIRES_LOGIN',route);
   }
+  await checkRoute('/hizmetler', 'services', 'Sanayi projeleri');
+  const formButton=page.getByRole('button',{name:"Ön talebi Atlas'a kaydet"});
+  await formButton.waitFor({timeout:20000});
+  assert.equal(await formButton.isDisabled(),true,'No silent submission without consent');
+  console.log('ATLAS_PUBLIC_SERVICE_FORM_VISIBLE_AND_CONSENT_GATED');
+  await page.locator('input[type=checkbox]').last().check();
+  assert.equal(await formButton.isDisabled(),true,'No submission with empty required fields');
+  console.log('ATLAS_PUBLIC_SERVICE_VALIDATION_GATED');
   await checkRoute('/ihaleler', 'tenders', 'İhale ve proje fırsatları');
   await page.waitForFunction(
     () => { const text=document.querySelector('#root')?.innerText || ''; return text.includes('GASKİ') || text.includes('Fırsat listesine şu anda erişilemiyor.'); },
