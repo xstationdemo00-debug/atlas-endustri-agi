@@ -28,6 +28,13 @@ async function checkRoute(hash, label, expectedText) {
 }
 try {
   await checkRoute('/login', 'login', 'Atlas Endüstri Ağı');
+  for (const route of ['/firmalar','/bildirimler','/projeler']) {
+    await page.goto(base + '/#' + route,{waitUntil:'domcontentloaded',timeout:60000});
+    await page.waitForFunction(() => window.location.hash.startsWith('#/login'),{timeout:25000});
+    const body=await page.locator('#root').innerText();
+    assert.ok(body.includes('Atlas Endüstri Ağı'),'Unauthenticated route did not show sign-in');
+    console.log('ATLAS_PRIVATE_ROUTE_REQUIRES_LOGIN',route);
+  }
   await checkRoute('/ihaleler', 'tenders', 'İhale ve proje fırsatları');
   await page.waitForFunction(
     () => { const text=document.querySelector('#root')?.innerText || ''; return text.includes('GASKİ') || text.includes('Fırsat listesine şu anda erişilemiyor.'); },
