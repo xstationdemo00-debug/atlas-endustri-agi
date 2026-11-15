@@ -108,7 +108,7 @@ async def security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'"
-    response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else "public, max-age=180"
+    response.headers["Cache-Control"] = "no-store" if (request.url.path.startswith("/api/") or response.status_code in (301,302,307,308)) else "public, max-age=180"
     return response
 
 @app.get("/api/health")
