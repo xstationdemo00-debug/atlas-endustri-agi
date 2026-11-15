@@ -16,6 +16,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Test original Base44 list/filter compatibility
         run: node --test original-site/tests/*.test.mjs
+      - name: Verify original services and independent inquiry intake
+        run: node --test original-site/tests/commercialIntake.test.mjs
       - name: Build original React interface
         working-directory: original-site
         run: npm run build
