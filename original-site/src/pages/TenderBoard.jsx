@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { fetchJsonWithWarmup } from '@/lib/fetchWithWarmup';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, BookOpenCheck, Building2, CalendarClock, ClipboardCheck, ExternalLink, Factory, Filter, Globe2, HardHat, MapPin, RefreshCw, Search, ShieldAlert, SlidersHorizontal, Wrench } from 'lucide-react';
 
@@ -22,22 +23,22 @@ export default function TenderBoard(){
  const [tenders,setTenders]=useState([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
+ const [waking,setWaking]=useState(false);
  const [search,setSearch]=useState('');
  const [city,setCity]=useState('all');
  const [sector,setSector]=useState('all');
  const [visibility,setVisibility]=useState('future');
  const [updatedAt,setUpdatedAt]=useState('');
  async function load(){
-  setLoading(true);setError('');
+  setLoading(true);setError('');setWaking(false);
   try{
    const api='https://atlas-endustri-agi-independent.onrender.com/api/tenders';
-   const res=await fetch(api,{method:'GET',cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
-   const data=await res.json();
+   const data=await fetchJsonWithWarmup(api,{method:'GET',cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}},{onRetry:()=>setWaking(true)});
    if(!res.ok||!data.ok||!Array.isArray(data.tenders))throw new Error('İhale verileri alınamadı.');
    setTenders(data.tenders);
    setUpdatedAt(data.generated_at||'');
   }catch(e){setError('Fırsat listesine şu anda erişilemiyor. Lütfen resmî kaynak portallarını kullanın.');}
-  finally{setLoading(false);}
+  finally{setLoading(false);setWaking(false);}
  }
  useEffect(()=>{load();},[]);
  const cities=useMemo(()=>[...new Set(tenders.map(x=>x.city).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr')),[tenders]);
@@ -68,14 +69,14 @@ export default function TenderBoard(){
     <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-950"><ShieldAlert className="mt-0.5 shrink-0" size={19}/><p>{PUBLIC_NOTE}</p></div>
    </section>
    <section id="liste" className="mx-auto max-w-6xl scroll-mt-5 px-4 pb-12">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-2xl font-black">Araştırılan ihaleler</h2><p className="mt-1 text-sm text-slate-600">Önce iş kabiliyetinize ve bölgenize göre filtreleyin.</p></div><button onClick={load} type="button" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-100"><RefreshCw size={16}/> Listeyi yenile</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-2xl font-black">Araştırılan ihaleler</h2><p className="mt-1 text-sm text-slate-600">Önce iş kabiliyetinize ve bölgenize göre filtreleyin.</p></div><button onClick={load} type="button" disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-100"><RefreshCw size={16}/> Listeyi yenile</button></div>
     <div className="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
      <label className="text-xs font-bold">İlan / İKN / kurum ara <span className="relative mt-2 block"><Search size={17} className="absolute left-3 top-3 text-slate-500"/><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Örn. CNC, 2026/..., GASKİ" className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm font-normal outline-none focus:border-amber-500"/></span></label>
      <label className="text-xs font-bold">Şehir<select value={city} onChange={e=>setCity(e.target.value)} className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal"><option value="all">Tüm şehirler</option>{cities.map(x=><option key={x}>{x}</option>)}</select></label>
      <label className="text-xs font-bold">İmalat / iş alanı<select value={sector} onChange={e=>setSector(e.target.value)} className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal"><option value="all">Tüm iş alanları</option>{Object.entries(sectors).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label>
      <label className="text-xs font-bold">İhale tarihi<select value={visibility} onChange={e=>setVisibility(e.target.value)} className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal"><option value="future">Tarihi henüz geçmeyenler</option><option value="all">Tüm kayıtlar</option><option value="past">Tarihi geçenler</option></select></label>
     </div>
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><span>{loading?'Yükleniyor...':filtered.length+' sonuç gösteriliyor'}</span><span>İlan tarihleri Türkiye yerel saati · Güncel durum için asıl kaynağa bakın</span></div>
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><span>{loading?(waking?'Veri sunucusu başlatılıyor, otomatik tekrar deniyoruz…':'Yükleniyor...'):filtered.length+' sonuç gösteriliyor'}</span><span>İlan tarihleri Türkiye yerel saati · Güncel durum için asıl kaynağa bakın</span></div>
     {error&&<p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
     {!loading&&!error&&filtered.length===0&&<div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center"><Filter size={28} className="mx-auto text-slate-500"/><h3 className="mt-3 font-bold">Bu ölçütlerde ilan bulunamadı</h3><p className="mt-2 text-sm text-slate-600">Şehir, sektör veya tarih filtresini değiştirin. Bu, resmî portallarda başka ilan bulunmadığı anlamına gelmez.</p><button onClick={()=>{setSearch('');setCity('all');setSector('all');setVisibility('future');}} className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold">Filtreleri temizle</button></div>}
     <div className="mt-5 grid gap-4 lg:grid-cols-2">

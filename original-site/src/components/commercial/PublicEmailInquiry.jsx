@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fetchJsonWithWarmup } from '@/lib/fetchWithWarmup';
 import { ClipboardCopy, Mail, ShieldCheck, Send } from 'lucide-react';
 
 const RECIPIENT='xstationdemo00@gmail.com';
@@ -47,6 +48,16 @@ export default function PublicEmailInquiry(){
    if(!consent){setError('Gizlilik bilgilendirmesini onaylamanız gerekiyor.');return;}
    setBusy(true);setError('');setNotice('');
    try{
+     // Wake a sleeping free Render instance by safe GET before any actual write.
+     // Never replay a real POST automatically: duplicate submissions are possible.
+     setNotice('Atlas veri sunucusu kontrol ediliyor, gerekiyorsa uyanmasını bekliyoruz…');
+     const health=await fetchJsonWithWarmup(
+       'https://atlas-endustri-agi-independent.onrender.com/api/health',
+       {method:'GET',credentials:'omit',cache:'no-store',headers:{Accept:'application/json'}},
+       {onRetry:()=>setNotice('Atlas veri sunucusu başlatılıyor; otomatik yeniden kontrol ediyoruz…')}
+     );
+     if(health?.database!=='ready')throw new Error('Veritabanı şu anda hazır değil. Talebi e-postayla gönderebilirsiniz.');
+     setNotice('');
      const body={
        company_name:clean(form.company),contact_name:clean(form.person),
        contact_email:addr,city:clean(form.location),
@@ -61,7 +72,7 @@ export default function PublicEmailInquiry(){
        throw new Error(res.status===429?'Çok sık deneme yapıldı, daha sonra deneyin.':
           'Talep Atlas sistemine kaydedilemedi. E-posta yöntemini kullanabilirsiniz.');
      setNotice('Ön talebiniz Atlas veritabanına kaydedildi. Referans: '+data.reference);
-   }catch(err){setError(err?.message||'Başvurunuz kaydedilemedi. E-posta yöntemini kullanabilirsiniz.');}
+   }catch(err){setNotice('');setError(err?.message||'Başvurunuz kaydedilemedi. E-posta yöntemini kullanabilirsiniz.');}
    finally{setBusy(false);}
  };
  const copy=async()=>{
