@@ -51,6 +51,20 @@ try {
   const tenderText = await page.locator('#root').innerText();
   assert.ok(tenderText.includes('GASKİ'), 'Tender content not loaded: '+tenderText.slice(-500));
   console.log('ATLAS_BROWSER_TENDER_DATA_VISIBLE');
+  // Android viewport: prove the original public interface is usable without a desktop.
+  await page.setViewportSize({ width: 393, height: 852 });
+  await checkRoute('/register', 'android-register', 'Atlas Endüstri Ağı');
+  await page.getByRole('button', { name: 'Kayıt ol' }).waitFor({ timeout: 15000 });
+  console.log('ATLAS_ANDROID_REGISTER_VISIBLE');
+  await checkRoute('/login', 'android-login', 'Atlas Endüstri Ağı');
+  await page.getByRole('button', { name: 'Giriş yap' }).waitFor({ timeout: 15000 });
+  console.log('ATLAS_ANDROID_LOGIN_VISIBLE');
+  await checkRoute('/hizmetler', 'android-services', 'Sanayi projeleri');
+  await page.getByRole('button', { name: "Ön talebi Atlas'a kaydet" }).waitFor({ timeout: 15000 });
+  console.log('ATLAS_ANDROID_SERVICES_VISIBLE');
+  await checkRoute('/ihaleler', 'android-tenders', 'İhale ve proje fırsatları');
+  console.log('ATLAS_ANDROID_TENDERS_VISIBLE');
+
 } finally {
   try { await page.screenshot({ path: '/tmp/atlas-original-browser-qa.png', fullPage: false }); } catch {}
   await browser.close();
